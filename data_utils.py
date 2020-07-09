@@ -1,5 +1,6 @@
 import numpy as np
 from skimage import io as img_io
+from tqdm import tqdm
 import os
 import torch
 
@@ -18,6 +19,7 @@ def gather_iam_line():
     gtfile = line_gt
     root_path = line_img
     gt = []
+    print("Read IAM dataset...")
     for line in open(gtfile):
         if not line.startswith("#"):
             info = line.strip().split()
@@ -42,11 +44,7 @@ def iam_main_loader():
     line_map = gather_iam_line()
 
     data = []
-    for i, (img_path, transcr) in enumerate(line_map):
-
-        if i % 1000 == 0:
-            print('imgs: [{}/{} ({:.0f}%)]'.format(i, len(line_map), 100. * i / len(line_map)))
-
+    for i, (img_path, transcr) in enumerate(tqdm(line_map)):
         try:
             img = img_io.imread(img_path + '.png')
             img = 1 - img.astype(np.float32) / 255.0
