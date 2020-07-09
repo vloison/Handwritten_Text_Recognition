@@ -1,45 +1,146 @@
 import torch.nn as nn
+import torch as torch
+import torch.nn.functional as F
 from collections import OrderedDict
-
-N_LAYERS = 3
-N_OUT = (20, 30, 10)
-KERNELS = (5, 6, (7, 6))
-STRIDES = (1, 1, 1)
-BATCH_NORM = [False, True, False]
-MAX_POOL = [(2, 2), 0, 0]
 
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, imheight, n_layers, n_out, kernels, strides, batch_norm, max_pool):
-        """imheight :
+    def __init__(self, imheight, n_layers, n_out, conv, batch_norm, max_pool):
+        """
+        Feature extractor for the RCNN
         :param imheight: height of the images that will be given as input of the network.
-        The height needs to be fixed, not the width.
-        :param n_layers: number of layers of the feature extractor
+        :param n_layers: number of convolutional layers of the feature extractor.
         :param n_out: number of channels that each convolutional layer should output.
-        :param kernels: list : size of the kernel of each convolutional layer
-        :param strides: list : stride for each convolutional layer
-        :param batch_norm: list of booleans : says if batch normalization is to be applied at the end of each layer
-        :param max_pool: list : says if maxpooling is to bo applied at the end of each layer, and the size of the
-        eventual maxpooling
+        :param conv: dictionary that stocks info about the conv layers (kernel size, stride and padding).
+        :param batch_norm: list of booleans : says if batch normalization is to be applied at the end of each conv layer
+        :param max_pool: list : dictionary that stocks info about the maxpooling layers
+        (kernel size, stride and padding).
         """
         super(FeatureExtractor, self).__init__()
-        list_layers = []
+        network = nn.Sequential()
         # Create layers iteratively
         for k in range(n_layers):
             if k == 0:
                 n_in = imheight
             else:
                 n_in = n_out[k-1]
-            list_layers.append(('conv{0}'.format(k), nn.Conv2d(n_in, n_out[k], kernel_size=kernels[k], stride=strides[k])))
+            network.add_module('conv{0}'.format(k), nn.Conv2d(n_in,
+                                                              n_out[k],
+                                                              kernel_size=conv['kernel'][k],
+                                                              stride=conv['stride'][k],
+                                                              padding=conv['padding'][k]))
             if batch_norm[k]:
-                list_layers.append(('batchnorm{0}'.format(k), nn.BatchNorm2d(n_out[k])))
-            list_layers.append(('relu{0}'.format(k), nn.ReLU()))
-            if max_pool[k] != 0:
-                list_layers.append(('maxpool{0}'.format(k), nn.MaxPool2d(kernel_size=max_pool[k])))
+                network.add_module('batchnorm{0}'.format(k), nn.BatchNorm2d(n_out[k]))
+            network.add_module('relu{0}'.format(k), nn.ReLU())
+            if max_pool['kernel'][k] != 0:
+                network.add_module('maxpool{0}'.format(k),
+                                   nn.MaxPool2d(kernel_size=max_pool['kernel'][k],
+                                                stride=max_pool['stride'][k],
+                                                padding=max_pool['padding'][k]))
 
         # Create network
-        self.network = nn.Sequential(OrderedDict(list_layers))
+        self.network = network
 
 
-model = FeatureExtractor(imheight=16, n_layers=N_LAYERS, n_out=N_OUT, kernels=KERNELS, strides=STRIDES, batch_norm=BATCH_NORM, max_pool=MAX_POOL)
-print(model.network)
+class RNN(nn.Module):
+    def __init__(self, n_layers, n_input, n_hidden, n_out, bidirectional=True):
+        """
+        The recurrent part of the RCNN
+        :param n_layers: int: number of recurrent layers.
+        :param n_input: int: number of input channels.
+        :param n_hidden: int: number of hidden cells for each layer
+        :param n_out: int :number of output channels
+        :param bidirectional: boolean: If True, the layers created are LSTMs. If False, the layers are BLSTMs.
+        """
+        super(RNN, self).__init__()
+        # Recurrent layers
+        rnn = nn.Sequential(nn.LSTM(input_size=n_input,
+                                    hidden_size=n_hidden,
+                                    num_layers=n_layers,
+                                    bidirectional=bidirectional))
+        self.rnn = rnn
+
+        # Linear layer
+        if bidirectional:
+            self.embedding = nn.Linear(n_hidden * 2, n_out)
+        else:
+            self.embedding = nn.Linear(n_hidden, n_out)
+
+    def forward(self, input):
+        recurrent, _ = self.rnn(input)
+        t, b, h = recurrent.size()
+        t_rec = recurrent.view(t * b, h)
+        output = self.embedding(t_rec)  # [T * b, nOut]
+        output = output.view(t, b, -1)
+        return output
+
+
+class RCNN(nn.Module):
+    """ RCNN for HTR """
+    def __init__(self, imheight, n_conv_layers, n_conv_out, conv, batch_norm, max_pool, n_r_layers, n_hidden, n_out, bidirectional=True):
+        super(RCNN, self).__init__()
+        self.featextractor = FeatureExtractor(imheight, n_conv_layers, n_conv_out, conv, batch_norm, max_pool)
+        self.recnet = RNN(n_r_layers, n_conv_out[-1], n_hidden, n_out, bidirectional)
+
+    def forward(self, input):
+        # Feature extractor
+        conv = self.featextractor.network(input)
+        # Convert output for RNN
+        b, c, h, w = conv.size()
+        assert h == 1, "the height of conv must be 1"
+        conv = conv.squeeze(2)
+        conv = conv.permute(2, 0, 1)
+        # Recurrent network
+        output = self.recnet(conv)
+        # add log_softmax to converge output
+        output = F.log_softmax(output, dim=2)
+        return output
+
+
+# PARAMETERS FOR THE FEATURE EXTRACTOR
+N_CONV_LAYERS = 7
+# Convolutional layers
+N_CONV_OUT = [64, 128, 256, 256, 512, 512, 512]
+CONV_KERNEL_SIZES = [3, 3, 3, 3, 3, 3, 2]
+CONV_STRIDES = [1, 1, 1, 1, 1, 1, 1]
+CONV_PADDINGS = [1, 1, 1, 1, 1, 1, 0]
+CONV = {
+    'kernel': CONV_KERNEL_SIZES,
+    'stride': CONV_STRIDES,
+    'padding': CONV_PADDINGS
+}
+# Batch normalization
+BATCH_NORM = [False, False, True, False, True, False, True]
+# Maxpooling
+MP_KERNEL_SIZES = [2, 2, 0, (2, 2), 0, (2, 2), 0]
+MP_STRIDES = [2, 2, 0, (2, 1), 0, (2, 1), 0]
+MP_PADDINGS = [0, 0, 0, (1, 1), 0, (1, 1), 0]
+MAX_POOL = {
+    'kernel': MP_KERNEL_SIZES,
+    'stride': MP_STRIDES,
+    'padding': MP_PADDINGS
+}
+# PARAMETERS FOR THE RECURRENT NETWORK
+N_REC_LAYERS = 2
+N_HIDDEN = 256
+N_CHARACTERS = 26
+
+
+if __name__ == "__main__":
+    print('Example of usage')
+    x = torch.randn(64, 16, 16, 64)  # nSamples, nChannels, Height, Width
+    print('x', x.shape)
+
+    fullrcnn = RCNN(imheight=16,
+                    n_conv_layers=N_CONV_LAYERS,
+                    n_conv_out=N_CONV_OUT,
+                    conv=CONV,
+                    batch_norm=BATCH_NORM,
+                    max_pool=MAX_POOL,
+                    n_r_layers=N_REC_LAYERS,
+                    n_hidden=N_HIDDEN,
+                    n_out=N_CHARACTERS, bidirectional=True)
+    print('Network \n', fullrcnn)
+
+    zbis = fullrcnn(x)
+    print('zbis', zbis.shape)
