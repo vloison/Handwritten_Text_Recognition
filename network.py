@@ -86,7 +86,8 @@ class RCNN(nn.Module):
     def forward(self, input):
         # Feature extractor
         conv = self.featextractor.network(input)
-        print('size after feature extractor:', conv.shape)
+        #print('size after feature extractor:', conv.shape)
+
         # Convert output for RNN
         b, c, h, w = conv.size()
         assert h == 1, "the height of conv must be 1"
@@ -105,7 +106,7 @@ if __name__ == "__main__":
     x = torch.randn(64, 1, 16, 64)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
-    fullrcnn = RCNN(imheight=16,
+    fullrcnn = RCNN(imheight=imgH,
                     nc=NC,
                     n_conv_layers=N_CONV_LAYERS,
                     n_conv_out=N_CONV_OUT,

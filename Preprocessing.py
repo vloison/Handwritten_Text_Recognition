@@ -33,4 +33,3 @@ def preprocessing(input, data_size=(32, None), affine = False, centered = False)
         img = img_centered(img, (img.shape[0], int(1.2 * img.shape[1]) + 32))
 
     return img
-
