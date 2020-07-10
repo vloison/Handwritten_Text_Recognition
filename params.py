@@ -16,10 +16,13 @@ save_location = 'trained_networks'
 # Path to the pretrained model to continue training. if pretrained == '', a new network will be created and trained.
 
 # TRAINING PARAMETERS
+cuda = True
 # Optimizer
 adam = True  # I only put adam for now, but in the github there is also ADADELTA and RMSprop
 lr = 0.0001  # learning rate for Critic, not used by adadealta
 beta1 = 0.5  # beta1 for adam. default=0.5
+epochs = 1000 # training epoch number
+displayInterval = 100
 # I copy-pasted the values from the HolmesYoung github, maybe try to change the values later
 
 # PARAMETERS FOR THE FEATURE EXTRACTOR
