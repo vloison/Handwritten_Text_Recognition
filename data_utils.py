@@ -3,21 +3,39 @@ from skimage import io as img_io
 from tqdm import tqdm
 import os
 import torch
+from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
+
 
 line_gt = '/media/vn_nguyen/hdd/hux/IAM/lines.txt'
 line_img = '/media/vn_nguyen/hdd/hux/IAM/lines/'
+line_train = '/media/vn_nguyen/hdd/hux/IAM/split/trainset.txt'
+line_test = '/media/vn_nguyen/hdd/hux/IAM/split/testset.txt'
+line_val1 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset1.txt'
+line_val2 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset2.txt'
+
 
 '''
 Data utils for IAM dataset
 '''
 
-def gather_iam_line():
+def gather_iam_line(set = 'train'):
     '''
     Read given dataset IAM from path line_gt and line_img
     return: List[Tuple(str(image path), str(ground truth))]
     '''
     gtfile = line_gt
     root_path = line_img
+    if set == 'train':
+        data_set = np.loadtxt(line_train, dtype=str)
+    elif set == 'test':
+        data_set = np.loadtxt(line_test, dtype=str)
+    elif set == 'val1':
+        data_set = np.loadtxt(line_val1, dtype=str)
+    elif set == 'val2':
+        data_set = np.loadtxt(line_val2, dtype=str)
+    else:
+        print('Cannot find this dataset')
+        return
     gt = []
     print("Read IAM dataset...")
     for line in open(gtfile):
@@ -26,22 +44,21 @@ def gather_iam_line():
             name = info[0]
             name_parts = name.split('-')
             pathlist = [root_path] + ['-'.join(name_parts[:i+1]) for i in range(len(name_parts))]
-
-            if (info[1] != 'ok'): # if the line is not properly segmented
+            line_name = pathlist[-1]
+            if (info[1] != 'ok') or (line_name not in data_set): # if the line is not properly segmented
                 continue
-
             img_path = '/'.join(pathlist)
             transcr = ' '.join(info[8:])
             gt.append((img_path, transcr))
     return gt
 
-def iam_main_loader():
+def iam_main_loader(set = 'train'):
     '''
     Store pairs of image and its ground truth text
     return: List[Tuple(nparray(image), str(ground truth text))]
     '''
 
-    line_map = gather_iam_line()
+    line_map = gather_iam_line(set)
 
     data = []
     for i, (img_path, transcr) in enumerate(tqdm(line_map)):
@@ -54,12 +71,44 @@ def iam_main_loader():
         data += [(img, transcr.replace("|", " "))]
     return data
 
+def pad_packed_collate(batch):
+    """Puts data, and lengths into a packed_padded_sequence then returns
+       the packed_padded_sequence and the labels. Set use_lengths to True
+       to use this collate function.
+       Args:
+         batch: (list of tuples) [(img, gt)].
+             img is a FloatTensor
+             gt is a str
+       Output:
+         packed_batch: (PackedSequence), see torch.nn.utils.rnn.pack_padded_sequence
+         labels: (Tensor), labels from the file names of the wav.
+    """
 
+    if len(batch) == 1:
+        sigs, labels = batch[0][0], batch[0][1]
+        sigs = sigs.t()
+        lengths = [sigs.size(0)]
+        sigs.unsqueeze_(0)
+        labels.unsqueeze_(0)
+    if len(batch) > 1:
+        sigs, labels, lengths = zip(
+            *[(a, b, a.size(2)) for (a, b) in sorted(batch, key=lambda x: x[0].size(2), reverse=True)])
+        n_channel, n_feats, max_len = sigs[0].size()
+        sigs = [torch.cat((s, torch.zeros(n_channel, n_feats, max_len - s.size(2))), 2) if s.size(2) != max_len else s for s in
+                sigs]
+        sigs = torch.stack(sigs, 0)
+    packed_batch = pack(sigs, lengths, batch_first=True)
+    return packed_batch, labels
 
 # test the functions
 if __name__ == '__main__':
-    data = iam_main_loader()
-    print(data[10][0])
+    data = iam_main_loader(set = 'train')
+    print("length of trainset:", len(data))
     print(data[10][0].shape)
-    print(data[10][0].sum())
+
+    data = iam_main_loader(set='test')
+    print("length of testset:", len(data))
+
+    data = iam_main_loader(set='val1')
+    print("length of val1 set:", len(data))
     print("Success")

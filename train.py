@@ -10,6 +10,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import numpy as np
 
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+
 # -----------------------------------------------
 """
 In this block
