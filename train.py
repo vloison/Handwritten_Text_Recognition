@@ -7,6 +7,8 @@ from torch.utils.data import random_split, DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
 from tqdm import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
 
 # -----------------------------------------------
 """
@@ -16,6 +18,7 @@ In this block
     Load pretrained model
 """
 
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
@@ -23,6 +26,7 @@ def weights_init(m):
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
+
 
 def net_init():
     nclass = len(params.alphabet)
@@ -35,14 +39,15 @@ def net_init():
                         max_pool=params.MAX_POOL,
                         n_r_layers=params.N_REC_LAYERS,
                         n_hidden=params.N_HIDDEN,
-                        n_out=nclass,
+                        n_out=params.N_CHARACTERS,
                         bidirectional=params.BIDIRECTIONAL)
 
     if params.pretrained != '':
-        print('loading pretrained model from %s' % params.pretrained)
+        print('Loading pretrained model from %s' % params.pretrained)
         # if params.multi_gpu:
         #    rcnn = torch.nn.DataParallel(rcnn)
         rcnn.load_state_dict(torch.load(params.pretrained))
+        print('Loading done.')
     elif params.weights_init:
         rcnn.apply(weights_init)
 
@@ -55,8 +60,10 @@ In this block
     evaluation function -> To do 
 """
 
+
 def train(model, criterion, optimizer, train_loader):
     print("Starting training...")
+    losses = []
     # Set requires_grad to True & set model mode to train & initialize optimizer gradients
     for p in model.parameters():
         p.requires_grad = True
@@ -64,6 +71,7 @@ def train(model, criterion, optimizer, train_loader):
     optimizer.zero_grad()
 
     for epoch in range(params.epochs):
+        avg_cost = 0
         for iter_idx, (img, transcr) in enumerate(tqdm(train_loader)):
             # Process predictions
             img = Variable(img)
@@ -82,15 +90,26 @@ def train(model, criterion, optimizer, train_loader):
                 labels = labels.cuda()
                 label_lengths = label_lengths.cuda()
             cost = criterion(preds, labels, preds_size, label_lengths)# / batch_size
+            avg_cost += cost
             cost.backward()
             optimizer.step()
-        print("img = ", img)
-        print("preds = ", preds)
-        print("labels = ", labels)
+
+        avg_cost = avg_cost/len(train_loader)
+        print('avg_cost', avg_cost.item())
+        losses.append(avg_cost.item())
+        #print("img = ", img)
+        #print("preds = ", preds)
+        #print("labels = ", labels)
         print("preds_size = ", preds_size)
         print("label_lengths = ", label_lengths)
-        print('Epoch[%d/%d] Loss: %f' % (epoch, params.epochs, cost))
-    return cost
+        print('Epoch[%d/%d] Average Loss: %f' % (epoch, params.epochs, avg_cost))
+
+    #plt.plot(np.arange(params.epochs), losses)
+    #plt.title("Average losses during training")
+    #plt.show()
+    print("Average losses during training", losses)
+    print("Training done.")
+    return losses
 
 
 
@@ -100,6 +119,7 @@ In this block
     initialise the model
 """
 MODEL = net_init()
+#print(MODEL)
 if params.cuda and torch.cuda.is_available():
     MODEL = MODEL.cuda()
 
@@ -111,6 +131,7 @@ In this block
 CRITERION = CTCLoss()
 if params.cuda and torch.cuda.is_available():
     CRITERION = CRITERION.cuda()
+
 # -----------------------------------------------
 """
 In this block
@@ -124,7 +145,7 @@ else:
 # -----------------------------------------------
 
 if __name__ == "__main__":
-    full_dataset = myDataset(data_size=(32, 100))  # if set data_size = (32, None), we need to set batch_size = 1
+    full_dataset = myDataset(data_size=(params.imgH, params.imgW))  # if set data_size = (32, None), we need to set batch_size = 1
     print("len(full_dataset) =", full_dataset.__len__())
 
     # split the data into training set and test set
@@ -145,3 +166,4 @@ if __name__ == "__main__":
     # eventually save model
     if params.save:
         torch.save(MODEL.state_dict(), '{0}/netRCNN.pth'.format(params.save_location))
+        print("Network saved at location %s" % params.save_location)

@@ -6,22 +6,22 @@ icdict = {i: c for i, c in enumerate(alphabet)} # int -> character
 
 # DATA PARAMETERS
 imgH = 32
-imgW = 100
+imgW = 400
 
 # PARAMETERS FOR LOADING/SAVING NETWORKS
 weights_init = True
 pretrained = ''  # 'trained_networks/netRCNN.pth'
-save = False  # Whether to save the trained network
+save = True  # Whether to save the trained network
 save_location = 'trained_networks'
 # Path to the pretrained model to continue training. if pretrained == '', a new network will be created and trained.
 
 # TRAINING PARAMETERS
 cuda = True
 # Optimizer
-adam = True  # I only put adam for now, but in the github there is also ADADELTA and RMSprop
+adam = False  # I only put adam for now, but in the github there is also ADADELTA and RMSprop
 lr = 0.0001  # learning rate for Critic, not used by adadealta
 beta1 = 0.5  # beta1 for adam. default=0.5
-epochs = 1000 # training epoch number
+epochs = 5 # training epoch number
 displayInterval = 100
 # I copy-pasted the values from the HolmesYoung github, maybe try to change the values later
 
@@ -53,5 +53,6 @@ MAX_POOL = {
 # PARAMETERS FOR THE RECURRENT NETWORK
 N_REC_LAYERS = 2
 N_HIDDEN = 256
-N_CHARACTERS = 26
+N_CHARACTERS = len(alphabet)
+print(N_CHARACTERS)
 BIDIRECTIONAL = True
