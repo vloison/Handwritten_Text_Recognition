@@ -1,7 +1,10 @@
 import torch as torch
+import os
 import network
 import params
+import data_utils
 from torch.nn import CTCLoss
+import torch.nn as nn
 from myDataset import myDataset
 from torch.utils.data import random_split, DataLoader
 import torch.optim as optim
@@ -72,16 +75,17 @@ def train(model, criterion, optimizer, train_loader):
     model.train()
     optimizer.zero_grad()
 
-    for epoch in range(params.epochs):
+    for epoch in range(10): #params.epochs
         avg_cost = 0
         for iter_idx, (img, transcr) in enumerate(tqdm(train_loader)):
             # Process predictions
-            img = Variable(img)
+            img = Variable(img.data.unsqueeze(1))
             if params.cuda and torch.cuda.is_available():
                 img = img.cuda()
-            # print(img.type)
+            # print("img =", img)
             preds = model(img)
-            preds_size = Variable(torch.LongTensor([preds.size(0)] * batch_size))
+            preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
+            # print("preds_size =", preds_size)
             # Process labels
             # CTCLoss().cuda() only works with LongTensor
             labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
@@ -93,18 +97,19 @@ def train(model, criterion, optimizer, train_loader):
                 label_lengths = label_lengths.cuda()
             cost = criterion(preds, labels, preds_size, label_lengths)# / batch_size
             avg_cost += cost
+            # print("avg_cost = ", avg_cost)
             cost.backward()
             optimizer.step()
 
         avg_cost = avg_cost/len(train_loader)
-        print('avg_cost', avg_cost.item())
+        # print('avg_cost', avg_cost.item())
         losses.append(avg_cost.item())
         #print("img = ", img)
         #print("preds = ", preds)
         #print("labels = ", labels)
         print("preds_size = ", preds_size)
         print("label_lengths = ", label_lengths)
-        print('Epoch[%d/%d] Average Loss: %f' % (epoch, params.epochs, avg_cost))
+        print('Epoch[%d/%d] Average Loss: %f' % (epoch+1, params.epochs, avg_cost))
 
     #plt.plot(np.arange(params.epochs), losses)
     #plt.title("Average losses during training")
@@ -123,8 +128,8 @@ In this block
 MODEL = net_init()
 #print(MODEL)
 if params.cuda and torch.cuda.is_available():
+    # MODEL = nn.DataParallel(MODEL)
     MODEL = MODEL.cuda()
-
 # -----------------------------------------------
 """
 In this block
@@ -147,21 +152,17 @@ else:
 # -----------------------------------------------
 
 if __name__ == "__main__":
-    full_dataset = myDataset(data_size=(params.imgH, params.imgW))  # if set data_size = (32, None), we need to set batch_size = 1
-    print("len(full_dataset) =", full_dataset.__len__())
-
-    # split the data into training set and test set
-    train_size = int(0.8 * len(full_dataset))
-    test_size = len(full_dataset) - train_size
-    train_set, test_set = random_split(full_dataset, [train_size, test_size])
+    # when data_size = (32, None), the width is not fixed
+    train_set = myDataset(data_size=(32, None), set='train')
+    test_set = myDataset(data_size=(32, None), set='test')
+    val1_set = myDataset(data_size=(32, None), set='val1')
     print("len(train_set) =", train_set.__len__())
     print("len(test_set) =", test_set.__len__())
-
+    print("len(val1_set) =", val1_set.__len__())
     # augmentation using data sampler
     batch_size = 5
-    TRAIN_LOADER = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8)
-    TEST_LOADER = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8)
-
+    TRAIN_LOADER = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8,
+                              collate_fn=data_utils.pad_packed_collate)
     # train model
     train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER)
 
