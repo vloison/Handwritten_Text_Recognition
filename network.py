@@ -117,11 +117,11 @@ if __name__ == "__main__":
                     n_hidden=N_HIDDEN,
                     n_out=N_CHARACTERS, bidirectional=True)
     # The arguments of RCNN are defined in params.py
-    #print('Network \n', fullrcnn)
+    print('Network \n', fullrcnn)
 
     zbis = fullrcnn(x)
     #print('zbis', zbis.shape)
 
-    f = fullrcnn.featextractor.network._modules['conv0'](x)
-    print(f.shape)
+    #f = fullrcnn.featextractor.network._modules['conv0'](x)
+    #print(f.shape)
 
