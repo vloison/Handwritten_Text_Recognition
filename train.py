@@ -11,10 +11,20 @@ import torch.optim as optim
 from torch.autograd import Variable
 from tqdm import tqdm
 import nltk
-import matplotlib.pyplot as plt
-import numpy as np
+from tensorboardX import SummaryWriter
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+# ------------------------------------------------
+"""
+In this block
+    Set path to log
+"""
+# os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+
+root_path = '/media/vn_nguyen/hdd/hux/Results/'
+log_dir = root_path + 'test{}'.format(len(os.listdir(root_path))+1)
+if not os.path.exists(log_dir):
+    os.mkdir(log_dir)
+writer = SummaryWriter(log_dir) #TensorBoard(log_dir)
 
 # -----------------------------------------------
 """
@@ -83,10 +93,8 @@ def train(model, criterion, optimizer, train_loader):
             img = Variable(img.data.unsqueeze(1))
             if params.cuda and torch.cuda.is_available():
                 img = img.cuda()
-            # print("img =", img)
             preds = model(img)
             preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
-            # print("preds_size =", preds_size)
             # Process labels
             # CTCLoss().cuda() only works with LongTensor
             labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
@@ -100,21 +108,23 @@ def train(model, criterion, optimizer, train_loader):
             avg_cost += cost.item()
             cost.backward()
             optimizer.step()
-            del img, preds, preds_size, labels, label_lengths, cost
+            del preds_size, labels, label_lengths, cost
+            # del img, preds, preds_size, labels, label_lengths, cost
         avg_cost = avg_cost/len(train_loader)
-        print('avg_cost', avg_cost)
+
+        # log the loss
+        writer.add_scalar('train loss', avg_cost, epoch)
+        # Convert paths to string for metrics
+        tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
+        tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
+        dec_transcr = str(epoch).zfill(4) + ' Prediction : '+''.join([params.icdict[t] for t in tt]).replace('_', '')
+        writer.add_image(dec_transcr, img[0], epoch)
+
         losses.append(avg_cost)
-        #print("img = ", img)
-        #print("preds = ", preds)
-        #print("labels = ", labels)
-        print("preds_size = ", preds_size)
-        print("label_lengths = ", label_lengths)
         print('Epoch[%d/%d] Average Loss: %f' % (epoch+1, params.epochs, avg_cost))
 
-    #plt.plot(np.arange(params.epochs), losses)
-    #plt.title("Average losses during training")
-    #plt.show()
-    print("Average losses during training", losses)
+
+    # print("Average losses during training", losses)
     print("Training done.")
     return losses
 
@@ -198,28 +208,29 @@ if __name__ == "__main__":
 
     # Load data
     # when data_size = (32, None), the width is not fixed
-    train_set = myDataset(data_size=(32, None), set='train')
+    train_set = myDataset(data_size=(32, 400), set='train')
     test_set = myDataset(data_size=(32, None), set='test')
-    val1_set = myDataset(data_size=(32, None), set='val1')
+    # val1_set = myDataset(data_size=(32, None), set='val1')
     print("len(train_set) =", train_set.__len__())
-    print("len(test_set) =", test_set.__len__())
-    print("len(val1_set) =", val1_set.__len__())
+    # print("len(test_set) =", test_set.__len__())
+    # print("len(val1_set) =", val1_set.__len__())
 
     # augmentation using data sampler
-    batch_size = 5
+    batch_size = 8
     TRAIN_LOADER = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8,
                               collate_fn=data_utils.pad_packed_collate)
     TEST_LOADER = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8,
                              collate_fn=data_utils.pad_packed_collate)
     # Train model
-    #train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER)
+    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER)
+    print("Finish training...")
 
     # Test model
-    test(MODEL, CRITERION, CER, TEST_LOADER, batch_size)
+    # test(MODEL, CRITERION, CER, TEST_LOADER, batch_size)
 
     # eventually save model
     if params.save:
-        torch.save(MODEL.state_dict(), '{0}/netRCNN.pth'.format(params.save_location))
-        print("Network saved at location %s" % params.save_location)
+        torch.save(MODEL.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
+        print("Network saved at location %s" % log_dir)
 
     del MODEL

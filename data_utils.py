@@ -100,6 +100,8 @@ def pad_packed_collate(batch):
     packed_batch = pack(sigs, lengths, batch_first=True)
     return packed_batch, labels
 
+
+
 # test the functions
 if __name__ == '__main__':
     data = iam_main_loader(set = 'train')
