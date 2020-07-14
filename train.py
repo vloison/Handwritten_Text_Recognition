@@ -1,12 +1,12 @@
 import torch as torch
 import os
 import network
-import params
+from params import *
 import data_utils
 from torch.nn import CTCLoss
 import torch.nn as nn
 from myDataset import myDataset
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
 from tqdm import tqdm
@@ -20,10 +20,7 @@ In this block
 """
 # os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
-root_path = '/media/vn_nguyen/hdd/hux/Results/'
-log_dir = root_path + 'test{}'.format(len(os.listdir(root_path))+1)
-if not os.path.exists(log_dir):
-    os.mkdir(log_dir)
+params, log_dir = BaseOptions().parser()
 writer = SummaryWriter(log_dir) #TensorBoard(log_dir)
 
 # -----------------------------------------------
@@ -45,7 +42,7 @@ def weights_init(m):
 
 
 def net_init():
-    nclass = len(params.alphabet)
+    nclass = len(alphabet)
     rcnn = network.RCNN(imheight=params.imgH,
                         nc=params.NC,
                         n_conv_layers=params.N_CONV_LAYERS,
@@ -97,7 +94,7 @@ def train(model, criterion, optimizer, train_loader):
             preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
             # Process labels
             # CTCLoss().cuda() only works with LongTensor
-            labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
+            labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
             label_lengths = torch.LongTensor([len(t) for t in transcr])
             # criterion = CTC loss
             if params.cuda and torch.cuda.is_available():
@@ -108,7 +105,7 @@ def train(model, criterion, optimizer, train_loader):
             avg_cost += cost.item()
             cost.backward()
             optimizer.step()
-            del preds_size, labels, label_lengths, cost
+            # del preds_size, labels, label_lengths, cost
             # del img, preds, preds_size, labels, label_lengths, cost
         avg_cost = avg_cost/len(train_loader)
 
@@ -117,7 +114,7 @@ def train(model, criterion, optimizer, train_loader):
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
         tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
-        dec_transcr = str(epoch).zfill(4) + ' Prediction : '+''.join([params.icdict[t] for t in tt]).replace('_', '')
+        dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction '+''.join([icdict[t] for t in tt]).replace('_', '')
         writer.add_image(dec_transcr, img[0], epoch)
 
         losses.append(avg_cost)
@@ -150,7 +147,7 @@ def test(model, criterion, metrics, test_loader, batch_size):
         preds_size = Variable(torch.LongTensor([preds.size(0)] * batch_size))
 
         # Process labels for CTCLoss
-        labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
+        labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
         label_lengths = torch.LongTensor([len(t) for t in transcr])
         # Compute CTCLoss
         if params.cuda and torch.cuda.is_available():
@@ -164,13 +161,15 @@ def test(model, criterion, metrics, test_loader, batch_size):
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
         for k in range(len(tdec)):
             tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
-            dec_transcr = ''.join([params.icdict[t] for t in tt]).replace('_', '')
+            dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
         # Compute metrics
             avg_metrics += metrics(transcr[k], dec_transcr)
-            if iter_idx % 100 == 0 and k % 2 == 0:
+            if iter_idx % 50 == 0 and k % 2 == 0:
                 print('label:', transcr[k])
                 print('prediction:', dec_transcr)
                 print('metrics:', metrics(transcr[k], dec_transcr))
+                writer.add_text(transcr[k],
+                                dec_transcr + '  --[Metrics=' + str(round(metrics(transcr[k], dec_transcr),2)) + ']', 0)
 
     avg_cost = avg_cost / len(test_loader)
     avg_metrics = avg_metrics / (len(test_loader)*batch_size)
@@ -208,25 +207,24 @@ if __name__ == "__main__":
 
     # Load data
     # when data_size = (32, None), the width is not fixed
-    train_set = myDataset(data_size=(32, 400), set='train')
-    test_set = myDataset(data_size=(32, None), set='test')
+    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train')
+    test_set = myDataset(data_size=(params.imgH, params.imgW), set='test')
     # val1_set = myDataset(data_size=(32, None), set='val1')
     print("len(train_set) =", train_set.__len__())
-    # print("len(test_set) =", test_set.__len__())
+    print("len(test_set) =", test_set.__len__())
     # print("len(val1_set) =", val1_set.__len__())
 
     # augmentation using data sampler
-    batch_size = 8
-    TRAIN_LOADER = DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=8,
+    TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
                               collate_fn=data_utils.pad_packed_collate)
-    TEST_LOADER = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8,
+    TEST_LOADER = DataLoader(test_set, batch_size=params.batch_size, shuffle=False, num_workers=8,
                              collate_fn=data_utils.pad_packed_collate)
     # Train model
     train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER)
     print("Finish training...")
 
     # Test model
-    # test(MODEL, CRITERION, CER, TEST_LOADER, batch_size)
+    test(MODEL, CRITERION, CER, TEST_LOADER, params.batch_size)
 
     # eventually save model
     if params.save:

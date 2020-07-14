@@ -5,55 +5,85 @@ cdict = {c: i for i, c in enumerate(alphabet)}  # character -> int
 icdict = {i: c for i, c in enumerate(alphabet)} # int -> character
 # '_' is the blank character for CTC
 
-# DATA PARAMETERS
-imgH = 32
-imgW = 400
 
-# PARAMETERS FOR LOADING/SAVING NETWORKS
-weights_init = True
-pretrained = ''#'trained_networks/netRCNN.pth'  # 'trained_networks/netRCNN.pth'
-save = False  # Whether to save the trained network
-save_location = 'trained_networks'
-# Path to the pretrained model to continue training. if pretrained == '', a new network will be created and trained.
+import os
+import argparse
 
-# TRAINING PARAMETERS
-cuda = True
-# Optimizer
-adam = False  # I only put adam for now, but in the github there is also ADADELTA and RMSprop
-lr = 0.0001  # learning rate for Critic, not used by adadealta
-beta1 = 0.5  # beta1 for adam. default=0.5
-epochs = 10  # training epoch number
-displayInterval = 100
-# I copy-pasted the values from the HolmesYoung github, maybe try to change the values later
+class BaseOptions():
+    def __init__(self):
+        self.initialized = False
+        root_path = '/media/vn_nguyen/hdd/hux/Results/'
+        self.log_dir = root_path + 'test{}'.format(len(os.listdir(root_path)) + 1)
+        if not os.path.exists(self.log_dir):
+            os.mkdir(self.log_dir)
 
-# PARAMETERS FOR THE FEATURE EXTRACTOR
-N_CONV_LAYERS = 7
-NC = 1  # Number of channels given as an input of RCNN : =1 because 2D images are given as arguments
+    def initialize(self,parser):
+        parser.add_argument('--log_dir', type=str, default=self.log_dir)
+        # DATA PARAMETERS
+        parser.add_argument('--imgH',type=int,default=32)
+        parser.add_argument('--imgW',type=int,default=400)
+        # PARAMETERS FOR LOADING/SAVING NETWORKS
+        parser.add_argument('--weights_init',type=bool,default=True)
+        parser.add_argument('--pretrained',type=str,default='') # 'trained_networks/netRCNN.pth'  # 'trained_networks/netRCNN.pth'
+        parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
+        # TRAINING PARAMETERS
+        parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
+        parser.add_argument('--batch_size', type=int, default=8)
+        parser.add_argument('--epochs', type=int, default=20, help='Training epoch number')
+        # Optimizer
+        parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
+        parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam, default=0.5')
+        parser.add_argument('--lr', type=int, default=0.0001, help='Learning rate')
+        # PARAMETERS FOR THE FEATURE EXTRACTOR
+        parser.add_argument('--N_CONV_LAYERS', type=int, default=7)
+        parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of RCNN')
+        # Convolutional layers
+        parser.add_argument('--N_CONV_OUT', type=list, default=[64, 128, 256, 256, 512, 512, 512])
+        parser.add_argument('--CONV', type=dict, default={
+            'kernel': [3, 3, 3, 3, 3, 3, 2],
+            'stride': [1, 1, 1, 1, 1, 1, 1],
+            'padding': [1, 1, 1, 1, 1, 1, 0]
+        })
+        # Batch normalization
+        parser.add_argument('--BATCH_NORM', type=list, default=[False, False, True, False, True, False, True])
+        # Maxpooling
+        parser.add_argument('--MAX_POOL', type=dict, default={
+            'kernel': [2, 2, 0, (2, 2), 0, (2, 2), 0],
+            'stride': [2, 2, 0, (2, 1), 0, (2, 1), 0],
+            'padding': [0, 0, 0, (0, 1), 0, (0, 1), 0]
+        })
+        # PARAMETERS FOR THE RECURRENT NETWORK
+        parser.add_argument('--N_REC_LAYERS', type=int, default=2)
+        parser.add_argument('--N_HIDDEN', type=int, default=256)
+        parser.add_argument('--N_CHARACTERS', type=int, default=len(alphabet))
+        parser.add_argument('--BIDIRECTIONAL', type=bool, default=True, help='Use bidirectional or not')
 
-# Convolutional layers
-N_CONV_OUT = [64, 128, 256, 256, 512, 512, 512]
-CONV_KERNEL_SIZES = [3, 3, 3, 3, 3, 3, 2]
-CONV_STRIDES = [1, 1, 1, 1, 1, 1, 1]
-CONV_PADDINGS = [1, 1, 1, 1, 1, 1, 0]
-CONV = {
-    'kernel': CONV_KERNEL_SIZES,
-    'stride': CONV_STRIDES,
-    'padding': CONV_PADDINGS
-}
-# Batch normalization
-BATCH_NORM = [False, False, True, False, True, False, True]
-# Maxpooling
-MP_KERNEL_SIZES = [2, 2, 0, (2, 2), 0, (2, 2), 0]
-MP_STRIDES = [2, 2, 0, (2, 1), 0, (2, 1), 0]
-MP_PADDINGS = [0, 0, 0, (0, 1), 0, (0, 1), 0]
-MAX_POOL = {
-    'kernel': MP_KERNEL_SIZES,
-    'stride': MP_STRIDES,
-    'padding': MP_PADDINGS
-}
-# PARAMETERS FOR THE RECURRENT NETWORK
-N_REC_LAYERS = 2
-N_HIDDEN = 256
-N_CHARACTERS = len(alphabet)
-print(N_CHARACTERS)
-BIDIRECTIONAL = True
+        self.initialized = True
+        return parser
+
+    def print_options(self, opt):
+        message = ''
+        message += '---------------------Options------------------\n'
+        for k,v in vars(opt).items():
+            comment = ''
+            default = self.parser.get_default(k)
+            if v != default:
+                comment = '\t[default: %s]' % str(default)
+            message += '{:>25}: {:<30}{}\n'.format(str(k), str(v),comment)
+        message += '----------------------End---------------------\n'
+        print(message)
+
+        opt_file = os.path.join(self.log_dir,'params.txt')
+        with open(opt_file,'w') as opt_file:
+            opt_file.write(message)
+            opt_file.write('\n')
+
+    def parser(self):
+        if not self.initialized:
+            parser = argparse.ArgumentParser()
+            parser = self.initialize(parser)
+        opt,_ = parser.parse_known_args()
+        self.parser = parser
+        self.opt = opt
+        self.print_options(self.opt)
+        return self.opt, self.log_dir
