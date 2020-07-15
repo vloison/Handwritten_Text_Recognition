@@ -1,5 +1,6 @@
 import torch as torch
 import os
+import shutil
 import network
 from params import *
 import data_utils
@@ -21,8 +22,11 @@ In this block
 # os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 params, log_dir = BaseOptions().parser()
+print("log_dir =", log_dir)
 if params.save:
     writer = SummaryWriter(log_dir)  # TensorBoard(log_dir)
+else:
+    shutil.rmtree(log_dir)
 
 # -----------------------------------------------
 """

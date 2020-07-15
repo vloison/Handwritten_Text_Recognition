@@ -8,12 +8,14 @@ icdict = {i: c for i, c in enumerate(alphabet)} # int -> character
 
 import os
 import argparse
+import time
 
 class BaseOptions():
     def __init__(self):
         self.initialized = False
         root_path = '/media/vn_nguyen/hdd/hux/Results/'
-        self.log_dir = root_path + 'test{}'.format(len(os.listdir(root_path)) + 1)
+        # self.log_dir = root_path + 'test{}'.format(len(os.listdir(root_path)) + 1)
+        self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         if not os.path.exists(self.log_dir):
             os.mkdir(self.log_dir)
 
