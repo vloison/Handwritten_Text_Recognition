@@ -122,10 +122,7 @@ def test(model, criterion, test_loader, batch_size):
                 if params.save:
                     writer.add_text(transcr[k],
                                     dec_transcr + '  --[CER=' + str(
-                                        round(CER(transcr[k], dec_transcr), 2)) + ']', 0)
-                    writer.add_text(transcr[k],
-                                    dec_transcr + '  --[WER=' + str(
-                                        round(WER(transcr[k], dec_transcr), 2)) + ']', 0)
+                                        round(CER(transcr[k], dec_transcr), 2)) + ']' + '  --[WER=' + str(round(WER(transcr[k], dec_transcr), 2)) + ']', 0)
 
     avg_cost = avg_cost / len(test_loader)
     avg_CER = avg_CER / (len(test_loader) * batch_size)
@@ -275,7 +272,7 @@ if __name__ == "__main__":
     VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
                             collate_fn=data_utils.pad_packed_collate)
     # Train model
-    #train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
+    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
 
     # eventually save model
     if params.save:
@@ -284,7 +281,5 @@ if __name__ == "__main__":
 
     # Test model
     test(MODEL, CRITERION, TEST_LOADER, params.batch_size)
-
-
 
     del MODEL
