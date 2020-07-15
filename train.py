@@ -11,8 +11,8 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
 from tqdm import tqdm
-import nltk
 from tensorboardX import SummaryWriter
+from utils import CER, WER
 
 # ------------------------------------------------
 """
@@ -78,12 +78,13 @@ In this block
     evaluation function
 """
 
-def test(model, criterion, metrics, test_loader, batch_size):
+def test(model, criterion, test_loader, batch_size):
     print("Starting testing...")
     model.eval()
 
     avg_cost = 0
-    avg_metrics = 0
+    avg_CER = 0
+    avg_WER = 0
     for iter_idx, (img, transcr) in enumerate(tqdm(test_loader)):
         # Process predictions
         img = Variable(img.data.unsqueeze(1))
@@ -111,23 +112,30 @@ def test(model, criterion, metrics, test_loader, batch_size):
             tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
             dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
             # Compute metrics
-            avg_metrics += metrics(transcr[k], dec_transcr)
+            avg_CER += CER(transcr[k], dec_transcr)
+            avg_WER += WER(transcr[k], dec_transcr)
             if iter_idx % 50 == 0 and k % 2 == 0:
                 print('label:', transcr[k])
                 print('prediction:', dec_transcr)
-                print('metrics:', metrics(transcr[k], dec_transcr))
+                print('CER:', CER(transcr[k], dec_transcr))
+                print('WER:', WER(transcr[k], dec_transcr))
                 if params.save:
                     writer.add_text(transcr[k],
-                                    dec_transcr + '  --[Metrics=' + str(
-                                        round(metrics(transcr[k], dec_transcr), 2)) + ']', 0)
+                                    dec_transcr + '  --[CER=' + str(
+                                        round(CER(transcr[k], dec_transcr), 2)) + ']', 0)
+                    writer.add_text(transcr[k],
+                                    dec_transcr + '  --[WER=' + str(
+                                        round(WER(transcr[k], dec_transcr), 2)) + ']', 0)
 
     avg_cost = avg_cost / len(test_loader)
-    avg_metrics = avg_metrics / (len(test_loader) * batch_size)
+    avg_CER = avg_CER / (len(test_loader) * batch_size)
+    avg_WER = avg_WER / (len(test_loader) * batch_size)
     print('Average CTCloss', avg_cost)
-    print("Average metrics", avg_metrics)
+    print("Average CER", avg_CER)
+    print("Average WER", avg_WER)
 
     print("Testing done.")
-    return avg_cost, avg_metrics
+    return avg_cost, avg_CER, avg_WER
 
 
 def val(model, criterion, val_loader):
@@ -220,15 +228,9 @@ def train(model, criterion, optimizer, train_loader, val_loader):
         print("label_lengths = ", label_lengths)
         print('Epoch[%d/%d] \n Average Training Loss: %f \n Average validation loss: %f' % (epoch+1, params.epochs, avg_cost, val_loss))
 
-
-
-    # print("Average losses during training", losses)
     print("Training done.")
     return losses
 
-
-def CER(label, prediction):
-    return nltk.edit_distance(label, prediction)/len(label)
 
 
 # -----------------------------------------------
@@ -273,7 +275,7 @@ if __name__ == "__main__":
     VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
                             collate_fn=data_utils.pad_packed_collate)
     # Train model
-    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
+    #train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
 
     # eventually save model
     if params.save:
@@ -281,7 +283,7 @@ if __name__ == "__main__":
         print("Network saved at location %s" % log_dir)
 
     # Test model
-    test(MODEL, CRITERION, CER, TEST_LOADER, params.batch_size)
+    test(MODEL, CRITERION, TEST_LOADER, params.batch_size)
 
 
 

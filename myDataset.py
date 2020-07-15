@@ -37,7 +37,7 @@ if __name__ == '__main__':
     print("len(val1_set) =", val1_set.__len__())
 
     # augmentation using data sampler
-    batch_size = 5
+    batch_size = 8
     val_loader = DataLoader(val1_set, batch_size=batch_size, shuffle=False, num_workers=8, collate_fn=data_utils.pad_packed_collate)
     for iter_idx, (img, gt) in enumerate(val_loader):
         print("img.size() =", img.data.size())

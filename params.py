@@ -26,8 +26,9 @@ class BaseOptions():
         parser.add_argument('--imgW', type=int, default=400)
         # PARAMETERS FOR LOADING/SAVING NETWORKS
         parser.add_argument('--weights_init', type=bool, default=True)
-        parser.add_argument('--pretrained', type=str, default='')  #
-        parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
+        #parser.add_argument('--pretrained', type=str, default='')  #
+        parser.add_argument('--pretrained', type=str, default='/media/vn_nguyen/hdd/hux/Results/test4/netRCNN.pth')
+        parser.add_argument('--save', type=bool, default=False, help='Whether to save the trained network')
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
         parser.add_argument('--batch_size', type=int, default=8)
