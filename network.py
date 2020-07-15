@@ -103,7 +103,7 @@ class RCNN(nn.Module):
 
 if __name__ == "__main__":
     print('Example of usage')
-    x = torch.randn(5, 1, 32, 400)  # nSamples, nChannels, Height, Width
+    x = torch.randn(5, 1, 32, 700)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
     fullrcnn = RCNN(imheight=imgH,

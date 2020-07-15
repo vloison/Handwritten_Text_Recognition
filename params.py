@@ -17,14 +17,14 @@ class BaseOptions():
         if not os.path.exists(self.log_dir):
             os.mkdir(self.log_dir)
 
-    def initialize(self,parser):
+    def initialize(self, parser):
         parser.add_argument('--log_dir', type=str, default=self.log_dir)
         # DATA PARAMETERS
-        parser.add_argument('--imgH',type=int,default=32)
-        parser.add_argument('--imgW',type=int,default=400)
+        parser.add_argument('--imgH', type=int, default=32)
+        parser.add_argument('--imgW', type=int, default=400)
         # PARAMETERS FOR LOADING/SAVING NETWORKS
-        parser.add_argument('--weights_init',type=bool,default=True)
-        parser.add_argument('--pretrained',type=str,default='') # 'trained_networks/netRCNN.pth'  # 'trained_networks/netRCNN.pth'
+        parser.add_argument('--weights_init', type=bool, default=True)
+        parser.add_argument('--pretrained', type=str, default='')  #
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
@@ -56,7 +56,7 @@ class BaseOptions():
         parser.add_argument('--N_REC_LAYERS', type=int, default=2)
         parser.add_argument('--N_HIDDEN', type=int, default=256)
         parser.add_argument('--N_CHARACTERS', type=int, default=len(alphabet))
-        parser.add_argument('--BIDIRECTIONAL', type=bool, default=True, help='Use bidirectional or not')
+        parser.add_argument('--BIDIRECTIONAL', type=bool, default=True, help='Use bidirectional LSTM or not')
 
         self.initialized = True
         return parser
@@ -82,7 +82,7 @@ class BaseOptions():
         if not self.initialized:
             parser = argparse.ArgumentParser()
             parser = self.initialize(parser)
-        opt,_ = parser.parse_known_args()
+        opt, _ = parser.parse_known_args()
         self.parser = parser
         self.opt = opt
         self.print_options(self.opt)

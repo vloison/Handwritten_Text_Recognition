@@ -21,7 +21,8 @@ In this block
 # os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 params, log_dir = BaseOptions().parser()
-writer = SummaryWriter(log_dir) #TensorBoard(log_dir)
+if params.save:
+    writer = SummaryWriter(log_dir)  # TensorBoard(log_dir)
 
 # -----------------------------------------------
 """
@@ -73,63 +74,6 @@ In this block
     evaluation function
 """
 
-
-def train(model, criterion, optimizer, train_loader):
-    print("Starting training...")
-    losses = []
-    # Set requires_grad to True & set model mode to train & initialize optimizer gradients
-    for p in model.parameters():
-        p.requires_grad = True
-    model.train()
-    optimizer.zero_grad()
-
-    for epoch in range(params.epochs):
-        avg_cost = 0
-        for iter_idx, (img, transcr) in enumerate(tqdm(train_loader)):
-            # Process predictions
-            img = Variable(img.data.unsqueeze(1))
-            if params.cuda and torch.cuda.is_available():
-                img = img.cuda()
-            preds = model(img)
-            preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
-            # Process labels
-            # CTCLoss().cuda() only works with LongTensor
-            labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
-            label_lengths = torch.LongTensor([len(t) for t in transcr])
-            # criterion = CTC loss
-            if params.cuda and torch.cuda.is_available():
-                preds_size = preds_size.cuda()
-                labels = labels.cuda()
-                label_lengths = label_lengths.cuda()
-            cost = criterion(preds, labels, preds_size, label_lengths)# / batch_size
-            avg_cost += cost.item()
-            cost.backward()
-            optimizer.step()
-            # del preds_size, labels, label_lengths, cost
-            # del img, preds, preds_size, labels, label_lengths, cost
-        avg_cost = avg_cost/len(train_loader)
-
-        # log the loss
-        writer.add_scalar('train loss', avg_cost, epoch)
-        # Convert paths to string for metrics
-        tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
-        tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
-        dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction '+''.join([icdict[t] for t in tt]).replace('_', '')
-        writer.add_image(dec_transcr, img[0], epoch)
-
-        losses.append(avg_cost)
-        print('Epoch[%d/%d] Average Loss: %f' % (epoch+1, params.epochs, avg_cost))
-
-
-    # print("Average losses during training", losses)
-    print("Training done.")
-    return losses
-
-
-def CER(label, prediction):
-    return nltk.edit_distance(label, prediction)/len(label)
-
-
 def test(model, criterion, metrics, test_loader, batch_size):
     print("Starting testing...")
     model.eval()
@@ -162,22 +106,126 @@ def test(model, criterion, metrics, test_loader, batch_size):
         for k in range(len(tdec)):
             tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
             dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
-        # Compute metrics
+            # Compute metrics
             avg_metrics += metrics(transcr[k], dec_transcr)
             if iter_idx % 50 == 0 and k % 2 == 0:
                 print('label:', transcr[k])
                 print('prediction:', dec_transcr)
                 print('metrics:', metrics(transcr[k], dec_transcr))
-                writer.add_text(transcr[k],
-                                dec_transcr + '  --[Metrics=' + str(round(metrics(transcr[k], dec_transcr),2)) + ']', 0)
+                if params.save:
+                    writer.add_text(transcr[k],
+                                    dec_transcr + '  --[Metrics=' + str(
+                                        round(metrics(transcr[k], dec_transcr), 2)) + ']', 0)
 
     avg_cost = avg_cost / len(test_loader)
-    avg_metrics = avg_metrics / (len(test_loader)*batch_size)
+    avg_metrics = avg_metrics / (len(test_loader) * batch_size)
     print('Average CTCloss', avg_cost)
     print("Average metrics", avg_metrics)
 
     print("Testing done.")
     return avg_cost, avg_metrics
+
+
+def val(model, criterion, val_loader):
+    model.eval()
+    avg_cost = 0
+
+    for iter_idx, (img, transcr) in enumerate(tqdm(val_loader)):
+        # Process predictions
+        img = Variable(img.data.unsqueeze(1))
+        if params.cuda and torch.cuda.is_available():
+            img = img.cuda()
+        # print(img.type)
+        with torch.no_grad():
+            preds = model(img)
+        preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
+
+        # Process labels for CTCLoss
+        labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
+        label_lengths = torch.LongTensor([len(t) for t in transcr])
+        # Compute CTCLoss
+        if params.cuda and torch.cuda.is_available():
+            preds_size = preds_size.cuda()
+            labels = labels.cuda()
+            label_lengths = label_lengths.cuda()
+        cost = criterion(preds, labels, preds_size, label_lengths)  # / batch_size
+        avg_cost += cost.item()
+
+    avg_cost = avg_cost / len(val_loader)
+    return(avg_cost)
+
+
+def train(model, criterion, optimizer, train_loader, val_loader):
+    print("Starting training...")
+    losses = []
+
+    optimizer.zero_grad()
+
+    for epoch in range(params.epochs):
+        # Training
+        for p in model.parameters():
+            p.requires_grad = True
+        model.train()
+        avg_cost = 0
+        for iter_idx, (img, transcr) in enumerate(tqdm(train_loader)):
+            # Process predictions
+            img = Variable(img.data.unsqueeze(1))
+            if params.cuda and torch.cuda.is_available():
+                img = img.cuda()
+            preds = model(img)
+            preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
+            # Process labels
+            # CTCLoss().cuda() only works with LongTensor
+            labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
+            label_lengths = torch.LongTensor([len(t) for t in transcr])
+            # criterion = CTC loss
+            if params.cuda and torch.cuda.is_available():
+                preds_size = preds_size.cuda()
+                labels = labels.cuda()
+                label_lengths = label_lengths.cuda()
+            cost = criterion(preds, labels, preds_size, label_lengths)# / batch_size
+            avg_cost += cost.item()
+            cost.backward()
+            optimizer.step()
+            # del preds_size, labels, label_lengths, cost
+            # del img, preds, preds_size, labels, label_lengths, cost
+        avg_cost = avg_cost/len(train_loader)
+
+        # log the loss
+        if params.save:
+            writer.add_scalar('train loss', avg_cost, epoch)
+        # Convert paths to string for metrics
+        tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
+        tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
+
+        if params.save:
+            dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
+                [icdict[t] for t in tt]).replace('_', '')
+            writer.add_image(dec_transcr, img[0], epoch)
+
+        # Validation
+        val_loss =val(model, criterion, val_loader)
+        if params.save:
+            writer.add_scalar('val loss', val_loss, epoch)
+
+        losses.append(avg_cost)
+        print("img = ", img.shape)
+        # print("preds = ", preds)
+        # print("labels = ", labels)
+        #print("preds_size = ", preds_size)
+        print("label_lengths = ", label_lengths)
+        print('Epoch[%d/%d] \n Average Training Loss: %f \n Average validation loss: %f' % (epoch+1, params.epochs, avg_cost, val_loss))
+
+
+
+    # print("Average losses during training", losses)
+    print("Training done.")
+    return losses
+
+
+def CER(label, prediction):
+    return nltk.edit_distance(label, prediction)/len(label)
+
 
 # -----------------------------------------------
 """
@@ -192,7 +240,6 @@ if params.cuda and torch.cuda.is_available():
 
 if __name__ == "__main__":
     torch.cuda.empty_cache()
-
     # Initialize model
     MODEL = net_init()
     # print(MODEL)
@@ -209,26 +256,29 @@ if __name__ == "__main__":
     # when data_size = (32, None), the width is not fixed
     train_set = myDataset(data_size=(params.imgH, params.imgW), set='train')
     test_set = myDataset(data_size=(params.imgH, params.imgW), set='test')
-    # val1_set = myDataset(data_size=(32, None), set='val1')
+    val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1')
     print("len(train_set) =", train_set.__len__())
     print("len(test_set) =", test_set.__len__())
-    # print("len(val1_set) =", val1_set.__len__())
+    print("len(val1_set) =", val1_set.__len__())
 
     # augmentation using data sampler
     TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
                               collate_fn=data_utils.pad_packed_collate)
     TEST_LOADER = DataLoader(test_set, batch_size=params.batch_size, shuffle=False, num_workers=8,
                              collate_fn=data_utils.pad_packed_collate)
+    VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
+                            collate_fn=data_utils.pad_packed_collate)
     # Train model
-    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER)
-    print("Finish training...")
-
-    # Test model
-    test(MODEL, CRITERION, CER, TEST_LOADER, params.batch_size)
+    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
 
     # eventually save model
     if params.save:
         torch.save(MODEL.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
         print("Network saved at location %s" % log_dir)
+
+    # Test model
+    test(MODEL, CRITERION, CER, TEST_LOADER, params.batch_size)
+
+
 
     del MODEL
