@@ -1,9 +1,6 @@
-import data_utils
-import Preprocessing
-import numpy as np
+from data import Preprocessing, data_utils
 import torch
 from torch.utils.data import Dataset
-from torch.utils.data import random_split
 from torch.utils.data import DataLoader
 
 class myDataset(Dataset):

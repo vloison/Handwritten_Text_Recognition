@@ -2,6 +2,8 @@ import torch.nn as nn
 import torch as torch
 import torch.nn.functional as F
 from params import *
+from tensorboardX import SummaryWriter
+import shutil
 from collections import OrderedDict
 
 
@@ -102,20 +104,28 @@ class RCNN(nn.Module):
 
 
 if __name__ == "__main__":
+    # Set path to log
+    params, log_dir = BaseOptions().parser()
+    print("log_dir =", log_dir)
+    if params.save:
+        writer = SummaryWriter(log_dir)  # TensorBoard(log_dir)
+    else:
+        shutil.rmtree(log_dir)
+
     print('Example of usage')
-    x = torch.randn(5, 1, 32, 700)  # nSamples, nChannels, Height, Width
+    x = torch.randn(5, 1, 64, 700)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
-    fullrcnn = RCNN(imheight=imgH,
-                    nc=NC,
-                    n_conv_layers=N_CONV_LAYERS,
-                    n_conv_out=N_CONV_OUT,
-                    conv=CONV,
-                    batch_norm=BATCH_NORM,
-                    max_pool=MAX_POOL,
-                    n_r_layers=N_REC_LAYERS,
-                    n_hidden=N_HIDDEN,
-                    n_out=N_CHARACTERS, bidirectional=True)
+    fullrcnn = RCNN(imheight=params.imgH,
+                    nc=params.NC,
+                    n_conv_layers=params.N_CONV_LAYERS,
+                    n_conv_out=params.N_CONV_OUT,
+                    conv=params.CONV,
+                    batch_norm=params.BATCH_NORM,
+                    max_pool=params.MAX_POOL,
+                    n_r_layers=params.N_REC_LAYERS,
+                    n_hidden=params.N_HIDDEN,
+                    n_out=params.N_CHARACTERS, bidirectional=True)
     # The arguments of RCNN are defined in params.py
     print('Network \n', fullrcnn)
 
