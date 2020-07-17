@@ -1,12 +1,10 @@
 import torch as torch
-import os
 import shutil
 import network
 from params import *
-import data_utils
+from data import data_utils
 from torch.nn import CTCLoss
-import torch.nn as nn
-from myDataset import myDataset
+from data.myDataset import myDataset
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
@@ -14,19 +12,8 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from utils import CER, WER
 
-# ------------------------------------------------
-"""
-In this block
-    Set path to log
-"""
-# os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
-params, log_dir = BaseOptions().parser()
-print("log_dir =", log_dir)
-if params.save:
-    writer = SummaryWriter(log_dir)  # TensorBoard(log_dir)
-else:
-    shutil.rmtree(log_dir)
+# os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 # -----------------------------------------------
 """
@@ -46,27 +33,27 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-def net_init():
-    nclass = len(alphabet)
-    rcnn = network.RCNN(imheight=params.imgH,
-                        nc=params.NC,
-                        n_conv_layers=params.N_CONV_LAYERS,
-                        n_conv_out=params.N_CONV_OUT,
-                        conv=params.CONV,
-                        batch_norm=params.BATCH_NORM,
-                        max_pool=params.MAX_POOL,
-                        n_r_layers=params.N_REC_LAYERS,
-                        n_hidden=params.N_HIDDEN,
-                        n_out=params.N_CHARACTERS,
-                        bidirectional=params.BIDIRECTIONAL)
+def net_init(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool, n_r_layers, n_hidden, n_out,
+             bidirectional, pretrained, bool_weights_init):
+    rcnn = network.RCNN(imheight,
+                        nc,
+                        n_conv_layers,
+                        n_conv_out,
+                        conv,
+                        batch_norm,
+                        max_pool,
+                        n_r_layers,
+                        n_hidden,
+                        n_out,
+                        bidirectional)
 
-    if params.pretrained != '':
+    if pretrained != '':
         print('Loading pretrained model from %s' % params.pretrained)
         # if params.multi_gpu:
         #    rcnn = torch.nn.DataParallel(rcnn)
         rcnn.load_state_dict(torch.load(params.pretrained))
         print('Loading done.')
-    elif params.weights_init:
+    elif bool_weights_init:
         rcnn.apply(weights_init)
 
     return rcnn
@@ -78,7 +65,8 @@ In this block
     evaluation function
 """
 
-def test(model, criterion, test_loader, batch_size):
+
+def test(model, criterion, test_loader, batch_size, save):
     print("Starting testing...")
     model.eval()
 
@@ -119,7 +107,7 @@ def test(model, criterion, test_loader, batch_size):
                 print('prediction:', dec_transcr)
                 print('CER:', CER(transcr[k], dec_transcr))
                 print('WER:', WER(transcr[k], dec_transcr))
-                if params.save:
+                if save:
                     writer.add_text(transcr[k],
                                     dec_transcr + '  --[CER=' + str(
                                         round(CER(transcr[k], dec_transcr), 2)) + ']' + '  --[WER=' + str(round(WER(transcr[k], dec_transcr), 2)) + ']', 0)
@@ -164,13 +152,13 @@ def val(model, criterion, val_loader):
     return(avg_cost)
 
 
-def train(model, criterion, optimizer, train_loader, val_loader):
+def train(epochs, model, criterion, optimizer, train_loader, val_loader, save):
     print("Starting training...")
     losses = []
 
     optimizer.zero_grad()
 
-    for epoch in range(params.epochs):
+    for epoch in range(epochs):
         # Training
         for p in model.parameters():
             p.requires_grad = True
@@ -201,29 +189,29 @@ def train(model, criterion, optimizer, train_loader, val_loader):
         avg_cost = avg_cost/len(train_loader)
 
         # log the loss
-        if params.save:
+        if save:
             writer.add_scalar('train loss', avg_cost, epoch)
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
         tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
 
-        if params.save:
+        if save:
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
                 [icdict[t] for t in tt]).replace('_', '')
             writer.add_image(dec_transcr, img[0], epoch)
 
         # Validation
         val_loss =val(model, criterion, val_loader)
-        if params.save:
+        if save:
             writer.add_scalar('val loss', val_loss, epoch)
 
         losses.append(avg_cost)
-        print("img = ", img.shape)
+        # print("img = ", img.shape)
         # print("preds = ", preds)
         # print("labels = ", labels)
         #print("preds_size = ", preds_size)
-        print("label_lengths = ", label_lengths)
-        print('Epoch[%d/%d] \n Average Training Loss: %f \n Average validation loss: %f' % (epoch+1, params.epochs, avg_cost, val_loss))
+        # print("label_lengths = ", label_lengths)
+        print('Epoch[%d/%d] \n Average Training Loss: %f \n Average validation loss: %f' % (epoch+1, epochs, avg_cost, val_loss))
 
     print("Training done.")
     return losses
@@ -231,20 +219,40 @@ def train(model, criterion, optimizer, train_loader, val_loader):
 
 
 # -----------------------------------------------
-"""
-In this block
-    criterion define
-"""
-CRITERION = CTCLoss()
-if params.cuda and torch.cuda.is_available():
-    CRITERION = CRITERION.cuda()
 
-# -----------------------------------------------
 
 if __name__ == "__main__":
     torch.cuda.empty_cache()
+
+    #Set path to log
+    params, log_dir = BaseOptions().parser()
+    print("log_dir =", log_dir)
+    if params.save:
+        writer = SummaryWriter(log_dir)  # TensorBoard(log_dir)
+    else:
+        shutil.rmtree(log_dir)
+
+    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train')
+    test_set = myDataset(data_size=(params.imgH, params.imgW), set='test')
+    val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1')
+    print("len(train_set) =", train_set.__len__())
+    print("len(test_set) =", test_set.__len__())
+    print("len(val1_set) =", val1_set.__len__())
+
     # Initialize model
-    MODEL = net_init()
+    MODEL = net_init(imheight=params.imgH,
+                     nc=params.NC,
+                     n_conv_layers=params.N_CONV_LAYERS,
+                     n_conv_out=params.N_CONV_OUT,
+                     conv=params.CONV,
+                     batch_norm=params.BATCH_NORM,
+                     max_pool=params.MAX_POOL,
+                     n_r_layers=params.N_REC_LAYERS,
+                     n_hidden=params.N_HIDDEN,
+                     n_out=params.N_CHARACTERS,
+                     bidirectional=params.BIDIRECTIONAL,
+                     pretrained=params.pretrained,
+                     bool_weights_init=params.weights_init)
     # print(MODEL)
     if params.cuda and torch.cuda.is_available():
         MODEL = MODEL.cuda()
@@ -252,17 +260,18 @@ if __name__ == "__main__":
     # Initialize optimizer
     if params.adam:
         OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, betas=(params.beta1, 0.999))
+    elif params.adadelta:
+        OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho)
     else:
         OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr)
 
-    # Load data
+    # Initialize criterion (CTCLoss)
+    CRITERION = CTCLoss()
+    if params.cuda and torch.cuda.is_available():
+        CRITERION = CRITERION.cuda()
+
+    # # Load data
     # when data_size = (32, None), the width is not fixed
-    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train')
-    test_set = myDataset(data_size=(params.imgH, params.imgW), set='test')
-    val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1')
-    print("len(train_set) =", train_set.__len__())
-    print("len(test_set) =", test_set.__len__())
-    print("len(val1_set) =", val1_set.__len__())
 
     # augmentation using data sampler
     TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
@@ -272,7 +281,7 @@ if __name__ == "__main__":
     VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
                             collate_fn=data_utils.pad_packed_collate)
     # Train model
-    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
+    train(params.epochs, MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER, params.save)
 
     # eventually save model
     if params.save:
@@ -280,6 +289,6 @@ if __name__ == "__main__":
         print("Network saved at location %s" % log_dir)
 
     # Test model
-    test(MODEL, CRITERION, TEST_LOADER, params.batch_size)
+    test(MODEL, CRITERION, TEST_LOADER, params.batch_size, params.save)
 
     del MODEL

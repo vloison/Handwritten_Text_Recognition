@@ -27,19 +27,17 @@ class BaseOptions():
         # PARAMETERS FOR LOADING/SAVING NETWORKS
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')  # /media/vn_nguyen/hdd/hux/Results/
-        #parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
-        parser.add_argument('--save', type=bool, default=False, help='Whether to save the trained network')
+        parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
         parser.add_argument('--batch_size', type=int, default=8)
         parser.add_argument('--epochs', type=int, default=20, help='Training epoch number')
         # Optimizer
         parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
-        parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
+        parser.add_argument('--adadelta', type=bool, default=True, help='Use ADADELTA or not')
         parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam, default=0.5')
         parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate.')
-        parser.add_argument('--rho', type=float, default=0.9, help='rho for ADADELTA :  coefficient used for computing '
-                                                                   'a running average of squared gradients')
+        parser.add_argument('--rho', type=float, default=0.9, help='rho for ADADELTA')
         parser.add_argument('--weight_decay', type=float, default=0, help='weight decay (L2 penalty) ')
         # PARAMETERS FOR THE FEATURE EXTRACTOR
         parser.add_argument('--N_CONV_LAYERS', type=int, default=7)
