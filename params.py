@@ -34,7 +34,7 @@ class BaseOptions():
         parser.add_argument('--epochs', type=int, default=20, help='Training epoch number')
         # Optimizer
         parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
-        parser.add_argument('--adadelta', type=bool, default=True, help='Use ADADELTA or not')
+        parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
         parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam, default=0.5')
         parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate.')
         parser.add_argument('--rho', type=float, default=0.9, help='rho for ADADELTA')
