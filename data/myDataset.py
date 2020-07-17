@@ -1,4 +1,4 @@
-import data_utils
+import data.data_utils
 import Preprocessing
 import numpy as np
 import torch
@@ -13,7 +13,7 @@ class myDataset(Dataset):
         self.affine = affine
         self.centered = centered
         if data_type == 'IAM':
-            self.data = data_utils.iam_main_loader(set)
+            self.data = data.data_utils.iam_main_loader(set)
 
     def __len__(self):
         return len(self.data)

@@ -2,11 +2,12 @@ import torch.nn as nn
 import torch as torch
 import torch.nn.functional as F
 from params import *
+import torchvision.models as models
 from collections import OrderedDict
 
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, imheight, nc, n_layers, n_out, conv, batch_norm, max_pool):
+    def __init__(self, imheight, nc, n_layers, n_out, conv, batch_norm, max_pool, resnet=False):
         """
         Feature extractor for the RCNN
         :param imheight: height of the images that will be given as input of the network.
@@ -15,29 +16,35 @@ class FeatureExtractor(nn.Module):
         :param conv: dictionary that stocks info about the conv layers (kernel size, stride and padding).
         :param batch_norm: list of booleans : says if batch normalization is to be applied at the end of each conv layer
         :param max_pool: list : dictionary that stocks info about the maxpooling layers
+        :param resnet: bool : use ResNet18 or not
         (kernel size, stride and padding).
         """
         super(FeatureExtractor, self).__init__()
-        network = nn.Sequential()
-        # Create layers iteratively
-        for k in range(n_layers):
-            if k == 0:
-                n_in = nc
-            else:
-                n_in = n_out[k-1]
-            network.add_module('conv{0}'.format(k), nn.Conv2d(n_in,
-                                                              n_out[k],
-                                                              kernel_size=conv['kernel'][k],
-                                                              stride=conv['stride'][k],
-                                                              padding=conv['padding'][k]))
-            if batch_norm[k]:
-                network.add_module('batchnorm{0}'.format(k), nn.BatchNorm2d(n_out[k]))
-            network.add_module('relu{0}'.format(k), nn.ReLU())
-            if max_pool['kernel'][k] != 0:
-                network.add_module('maxpool{0}'.format(k),
-                                   nn.MaxPool2d(kernel_size=max_pool['kernel'][k],
-                                                stride=max_pool['stride'][k],
-                                                padding=max_pool['padding'][k]))
+        if resnet == True:
+            resnet18 = models.resnet18(pretrained=False)
+            resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            network = torch.nn.Sequential(*(list(resnet18.children())[:-2]))
+        else:
+            network = nn.Sequential()
+            # Create layers iteratively
+            for k in range(n_layers):
+                if k == 0:
+                    n_in = nc
+                else:
+                    n_in = n_out[k-1]
+                network.add_module('conv{0}'.format(k), nn.Conv2d(n_in,
+                                                                  n_out[k],
+                                                                  kernel_size=conv['kernel'][k],
+                                                                  stride=conv['stride'][k],
+                                                                  padding=conv['padding'][k]))
+                if batch_norm[k]:
+                    network.add_module('batchnorm{0}'.format(k), nn.BatchNorm2d(n_out[k]))
+                network.add_module('relu{0}'.format(k), nn.ReLU())
+                if max_pool['kernel'][k] != 0:
+                    network.add_module('maxpool{0}'.format(k),
+                                       nn.MaxPool2d(kernel_size=max_pool['kernel'][k],
+                                                    stride=max_pool['stride'][k],
+                                                    padding=max_pool['padding'][k]))
 
         # Create network
         self.network = network
@@ -78,9 +85,10 @@ class RNN(nn.Module):
 
 class RCNN(nn.Module):
     """ RCNN for HTR """
-    def __init__(self, imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool, n_r_layers, n_hidden, n_out, bidirectional=True):
+    def __init__(self, imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm,
+                 max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, resnet=False):
         super(RCNN, self).__init__()
-        self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool)
+        self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool, resnet)
         self.recnet = RNN(n_r_layers, n_conv_out[-1], n_hidden, n_out, bidirectional)
 
     def forward(self, input):
@@ -102,25 +110,28 @@ class RCNN(nn.Module):
 
 
 if __name__ == "__main__":
+    params, log_dir = BaseOptions().parser()
+
     print('Example of usage')
-    x = torch.randn(5, 1, 32, 700)  # nSamples, nChannels, Height, Width
+    x = torch.randn(8, 1, 32, 3200)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
-    fullrcnn = RCNN(imheight=imgH,
-                    nc=NC,
-                    n_conv_layers=N_CONV_LAYERS,
-                    n_conv_out=N_CONV_OUT,
-                    conv=CONV,
-                    batch_norm=BATCH_NORM,
-                    max_pool=MAX_POOL,
-                    n_r_layers=N_REC_LAYERS,
-                    n_hidden=N_HIDDEN,
-                    n_out=N_CHARACTERS, bidirectional=True)
+    fullrcnn = RCNN(imheight=params.imgH,
+                    nc=params.NC,
+                    n_conv_layers=params.N_CONV_LAYERS,
+                    n_conv_out=params.N_CONV_OUT,
+                    conv=params.CONV,
+                    batch_norm=params.BATCH_NORM,
+                    max_pool=params.MAX_POOL,
+                    n_r_layers=params.N_REC_LAYERS,
+                    n_hidden=params.N_HIDDEN,
+                    n_out=params.N_CHARACTERS,
+                    bidirectional=True, resnet=True)
     # The arguments of RCNN are defined in params.py
     print('Network \n', fullrcnn)
 
     zbis = fullrcnn(x)
-    #print('zbis', zbis.shape)
+    print('zbis', zbis.shape)
 
     #f = fullrcnn.featextractor.network._modules['conv0'](x)
     #print(f.shape)

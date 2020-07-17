@@ -3,10 +3,9 @@ import os
 import shutil
 import network
 from params import *
-import data_utils
+import data.data_utils
 from torch.nn import CTCLoss
-import torch.nn as nn
-from myDataset import myDataset
+from data.myDataset import myDataset
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
@@ -19,7 +18,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-# os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -58,7 +57,8 @@ def net_init():
                         n_r_layers=params.N_REC_LAYERS,
                         n_hidden=params.N_HIDDEN,
                         n_out=params.N_CHARACTERS,
-                        bidirectional=params.BIDIRECTIONAL)
+                        bidirectional=params.BIDIRECTIONAL,
+                        resnet=params.RESNET18)
 
     if params.pretrained != '':
         print('Loading pretrained model from %s' % params.pretrained)
@@ -255,8 +255,10 @@ if __name__ == "__main__":
     # Initialize optimizer
     if params.adam:
         OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, betas=(params.beta1, 0.999))
+    elif params.adadelta:
+        OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho)
     else:
-        OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr)
+        OPTIMIZER = optim.RMSprop(MODEL.parameters(),lr=params.lr)
 
     # Load data
     # when data_size = (32, None), the width is not fixed
@@ -269,13 +271,13 @@ if __name__ == "__main__":
 
     # augmentation using data sampler
     TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
-                              collate_fn=data_utils.pad_packed_collate)
+                              collate_fn=data.data_utils.pad_packed_collate)
     TEST_LOADER = DataLoader(test_set, batch_size=params.batch_size, shuffle=False, num_workers=8,
-                             collate_fn=data_utils.pad_packed_collate)
+                             collate_fn=data.data_utils.pad_packed_collate)
     VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
-                            collate_fn=data_utils.pad_packed_collate)
+                            collate_fn=data.data_utils.pad_packed_collate)
     # Train model
-    #train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
+    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
 
     # eventually save model
     if params.save:
