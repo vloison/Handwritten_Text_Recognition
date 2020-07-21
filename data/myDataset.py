@@ -1,5 +1,6 @@
 import data.data_utils
 import Preprocessing
+from PIL import Image
 import numpy as np
 import torch
 from torch.utils.data import Dataset
@@ -8,12 +9,13 @@ from torch.utils.data import DataLoader
 
 class myDataset(Dataset):
     def __init__(self, data_type = 'IAM', set = 'train', data_size=(32, None),
-                 affine = False, centered = False):
+                 affine = False, centered = False, data_aug = False):
         self.data_size = data_size
         self.affine = affine
         self.centered = centered
         if data_type == 'IAM':
-            self.data = data.data_utils.iam_main_loader(set)
+            self.data = data.data_utils.iam_main_loader(set, data_aug)
+
 
     def __len__(self):
         return len(self.data)

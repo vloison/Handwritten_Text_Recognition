@@ -51,7 +51,7 @@ class FeatureExtractor(nn.Module):
 
 
 class RNN(nn.Module):
-    def __init__(self, n_layers, n_input, n_hidden, n_out, bidirectional=True):
+    def __init__(self, n_layers, n_input, n_hidden, n_out, bidirectional=True, dropout=True):
         """
         The recurrent part of the RCNN
         :param n_layers: int: number of recurrent layers.
@@ -62,10 +62,17 @@ class RNN(nn.Module):
         """
         super(RNN, self).__init__()
         # Recurrent layers
-        rnn = nn.Sequential(nn.LSTM(input_size=n_input,
-                                    hidden_size=n_hidden,
-                                    num_layers=n_layers,
-                                    bidirectional=bidirectional))
+        if dropout > 0:
+            rnn = nn.Sequential(nn.LSTM(input_size=n_input,
+                                        hidden_size=n_hidden,
+                                        num_layers=n_layers,
+                                        bidirectional=bidirectional,
+                                        dropout=dropout))
+        else:
+            rnn = nn.Sequential(nn.LSTM(input_size=n_input,
+                                        hidden_size=n_hidden,
+                                        num_layers=n_layers,
+                                        bidirectional=bidirectional))
         self.rnn = rnn
 
         # Linear layer
@@ -86,10 +93,10 @@ class RNN(nn.Module):
 class RCNN(nn.Module):
     """ RCNN for HTR """
     def __init__(self, imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm,
-                 max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, resnet=False):
+                 max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, resnet=False, dropout=0.0):
         super(RCNN, self).__init__()
         self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool, resnet)
-        self.recnet = RNN(n_r_layers, n_conv_out[-1], n_hidden, n_out, bidirectional)
+        self.recnet = RNN(n_r_layers, n_conv_out[-1], n_hidden, n_out, bidirectional, dropout)
 
     def forward(self, input):
         # Feature extractor
@@ -113,7 +120,7 @@ if __name__ == "__main__":
     params, log_dir = BaseOptions().parser()
 
     print('Example of usage')
-    x = torch.randn(8, 1, 32, 3200)  # nSamples, nChannels, Height, Width
+    x = torch.randn(8, 1, params.imgH, params.imgW)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
     fullrcnn = RCNN(imheight=params.imgH,
@@ -126,7 +133,7 @@ if __name__ == "__main__":
                     n_r_layers=params.N_REC_LAYERS,
                     n_hidden=params.N_HIDDEN,
                     n_out=params.N_CHARACTERS,
-                    bidirectional=True, resnet=True)
+                    bidirectional=True, resnet=False)
     # The arguments of RCNN are defined in params.py
     print('Network \n', fullrcnn)
 

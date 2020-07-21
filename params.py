@@ -24,46 +24,52 @@ class BaseOptions():
         # DATA PARAMETERS
         parser.add_argument('--imgH', type=int, default=32)
         parser.add_argument('--imgW', type=int, default=400)
+        parser.add_argument('--data_aug', type=bool, default=False)
         # PARAMETERS FOR LOADING/SAVING NETWORKS
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')  #
-        # parser.add_argument('--pretrained', type=str, default='/media/vn_nguyen/hdd/hux/Results_network/07-16_16:10:03/netRCNN.pth')
-        parser.add_argument('--save', type=bool, default=False, help='Whether to save the trained network')
+        # parser.add_argument('--pretrained', type=str, default='/media/vn_nguyen/hdd/hux/Results_network/07-20_18:25:16/netRCNN.pth')
+        parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
-        parser.add_argument('--batch_size', type=int, default=8)
-        parser.add_argument('--epochs', type=int, default=20, help='Training epoch number')
+        parser.add_argument('--batch_size', type=int, default=16)
+        parser.add_argument('--epochs', type=int, default=60, help='Training epoch number')
         # Optimizer
         parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
         parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
         parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam, default=0.5')
-        parser.add_argument('--lr', type=float, default=0.00001, help='Learning rate')
+        parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
         parser.add_argument('--rho', type=float, default=0.9, help='rho for ADADELTA')
         parser.add_argument('--weight_decay', type=float, default=0, help='weight decay (L2 penalty) ')
         # PARAMETERS FOR THE FEATURE EXTRACTOR
         parser.add_argument('--RESNET18', type=bool, default=False) # if using resnet18, we need imgW at least 3200
-        parser.add_argument('--N_CONV_LAYERS', type=int, default=7)
+        parser.add_argument('--N_CONV_LAYERS', type=int, default=7) # 7
         parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of RCNN')
         # Convolutional layers
-        parser.add_argument('--N_CONV_OUT', type=list, default=[64, 128, 256, 256, 512, 512, 512])
+        parser.add_argument('--N_CONV_OUT', type=list,
+                            default=[64, 128, 256, 256, 512, 512, 512] # [16, 32, 64, 128] #
+                            )
         parser.add_argument('--CONV', type=dict, default={
-            'kernel': [3, 3, 3, 3, 3, 3, 2],
-            'stride': [1, 1, 1, 1, 1, 1, 1],
-            'padding': [1, 1, 1, 1, 1, 1, 0]
+            'kernel': [3, 3, 3, 3, 3, 3, 2], # [3,3,3,3], #
+            'stride': [1, 1, 1, 1, 1, 1, 1], # [1,1,1,1], #
+            'padding': [1, 1, 1, 1, 1, 1, 0] # [1,1,1,1] #
         })
         # Batch normalization
-        parser.add_argument('--BATCH_NORM', type=list, default=[False, False, True, False, True, False, True])
+        parser.add_argument('--BATCH_NORM', type=list,
+                            default=[False, False, True, False, True, False, True] # [True, True, True, True] #
+                            )
         # Maxpooling
         parser.add_argument('--MAX_POOL', type=dict, default={
-            'kernel': [2, 2, 0, (2, 2), 0, (2, 2), 0],
-            'stride': [2, 2, 0, (2, 1), 0, (2, 1), 0],
-            'padding': [0, 0, 0, (0, 1), 0, (0, 1), 0]
+            'kernel': [2, 2, 0, (2, 2), 0, (2, 2), 0], # [2,2,2,4], #
+            'stride': [2, 2, 0, (2, 1), 0, (2, 1), 0], # [2,2,2,4], #
+            'padding': [0, 0, 0, (0, 1), 0, (0, 1), 0] # [0,0,0,0] #
         })
         # PARAMETERS FOR THE RECURRENT NETWORK
-        parser.add_argument('--N_REC_LAYERS', type=int, default=2) # 2
+        parser.add_argument('--N_REC_LAYERS', type=int, default=1) # 2
         parser.add_argument('--N_HIDDEN', type=int, default=256)
         parser.add_argument('--N_CHARACTERS', type=int, default=len(alphabet))
         parser.add_argument('--BIDIRECTIONAL', type=bool, default=True, help='Use bidirectional LSTM or not')
+        parser.add_argument('--DROPOUT', type=float, default=0.0, help='Dropout parameter within [0,1] in BLSTM')
 
         self.initialized = True
         return parser

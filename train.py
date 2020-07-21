@@ -6,6 +6,7 @@ from params import *
 import data.data_utils
 from torch.nn import CTCLoss
 from data.myDataset import myDataset
+import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.autograd import Variable
@@ -18,7 +19,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1,2'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -58,7 +59,8 @@ def net_init():
                         n_hidden=params.N_HIDDEN,
                         n_out=params.N_CHARACTERS,
                         bidirectional=params.BIDIRECTIONAL,
-                        resnet=params.RESNET18)
+                        resnet=params.RESNET18,
+                        dropout=params.DROPOUT)
 
     if params.pretrained != '':
         print('Loading pretrained model from %s' % params.pretrained)
@@ -93,7 +95,7 @@ def test(model, criterion, test_loader, batch_size):
         # print(img.type)
         with torch.no_grad():
             preds = model(img)
-        preds_size = Variable(torch.LongTensor([preds.size(0)] * batch_size))
+        preds_size = Variable(torch.LongTensor([preds.size(0)]  * img.size(0)))
 
         # Process labels for CTCLoss
         labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
@@ -262,7 +264,7 @@ if __name__ == "__main__":
 
     # Load data
     # when data_size = (32, None), the width is not fixed
-    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train')
+    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train', data_aug=params.data_aug)
     test_set = myDataset(data_size=(params.imgH, params.imgW), set='test')
     val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1')
     print("len(train_set) =", train_set.__len__())

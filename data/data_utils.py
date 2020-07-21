@@ -1,5 +1,7 @@
 import numpy as np
 from skimage import io as img_io
+from skimage import transform
+from skimage import util
 from tqdm import tqdm
 import os
 import torch
@@ -52,7 +54,7 @@ def gather_iam_line(set = 'train'):
             gt.append((img_path, transcr))
     return gt
 
-def iam_main_loader(set = 'train'):
+def iam_main_loader(set = 'train', data_aug = False):
     '''
     Store pairs of image and its ground truth text
     return: List[Tuple(nparray(image), str(ground truth text))]
@@ -64,11 +66,18 @@ def iam_main_loader(set = 'train'):
     for i, (img_path, transcr) in enumerate(tqdm(line_map)):
         try:
             img = img_io.imread(img_path + '.png')
+            if set == 'train' and data_aug: # augment data with shear
+                tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
+                inverted_img = util.invert(img)
+                tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
+                tf_img = tf_img.astype(np.float32) / 255.0
             img = 1 - img.astype(np.float32) / 255.0
         except:
             continue
 
         data += [(img, transcr.replace("|", " "))]
+        if set == 'train' and data_aug:  # augment data with shear
+            data += [(tf_img, transcr.replace("|", " "))]
     return data
 
 def pad_packed_collate(batch):
@@ -83,7 +92,6 @@ def pad_packed_collate(batch):
          packed_batch: (PackedSequence), see torch.nn.utils.rnn.pack_padded_sequence
          labels: (Tensor), labels from the file names of the wav.
     """
-
     if len(batch) == 1:
         sigs, labels = batch[0][0], batch[0][1]
         sigs = sigs.t()
