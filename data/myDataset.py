@@ -1,11 +1,12 @@
 import data.data_utils
-import Preprocessing
+import data.Preprocessing as Preprocessing
 from PIL import Image
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
+
 
 class myDataset(Dataset):
     def __init__(self, data_type = 'IAM', set = 'train', data_size=(32, None),

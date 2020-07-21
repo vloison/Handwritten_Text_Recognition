@@ -20,7 +20,7 @@ class FeatureExtractor(nn.Module):
         (kernel size, stride and padding).
         """
         super(FeatureExtractor, self).__init__()
-        if resnet == True:
+        if resnet:
             resnet18 = models.resnet18(pretrained=False)
             resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
             network = torch.nn.Sequential(*(list(resnet18.children())[:-2]))

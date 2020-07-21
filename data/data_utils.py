@@ -80,6 +80,7 @@ def iam_main_loader(set = 'train', data_aug = False):
             data += [(tf_img, transcr.replace("|", " "))]
     return data
 
+
 def pad_packed_collate(batch):
     """Puts data, and lengths into a packed_padded_sequence then returns
        the packed_padded_sequence and the labels. Set use_lengths to True

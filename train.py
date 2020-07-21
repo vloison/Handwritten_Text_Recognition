@@ -47,7 +47,6 @@ def weights_init(m):
 
 
 def net_init():
-    nclass = len(alphabet)
     rcnn = network.RCNN(imheight=params.imgH,
                         nc=params.NC,
                         n_conv_layers=params.N_CONV_LAYERS,
@@ -79,6 +78,7 @@ In this block
     training function 
     evaluation function
 """
+
 
 def test(model, criterion, test_loader, batch_size):
     print("Starting testing...")
@@ -166,7 +166,7 @@ def val(model, criterion, val_loader):
         avg_cost += cost.item()
 
     avg_cost = avg_cost / len(val_loader)
-    return(avg_cost)
+    return avg_cost
 
 
 def train(model, criterion, optimizer, train_loader, val_loader):
@@ -218,21 +218,20 @@ def train(model, criterion, optimizer, train_loader, val_loader):
             writer.add_image(dec_transcr, img[0], epoch)
 
         # Validation
-        val_loss =val(model, criterion, val_loader)
+        val_loss = val(model, criterion, val_loader)
         if params.save:
             writer.add_scalar('val loss', val_loss, epoch)
 
         losses.append(avg_cost)
-        print("img = ", img.shape)
+        # print("img = ", img.shape)
         # print("preds = ", preds)
         # print("labels = ", labels)
-        #print("preds_size = ", preds_size)
-        print("label_lengths = ", label_lengths)
+        # print("preds_size = ", preds_size)
+        # print("label_lengths = ", label_lengths)
         print('Epoch[%d/%d] \n Average Training Loss: %f \n Average validation loss: %f' % (epoch+1, params.epochs, avg_cost, val_loss))
 
     print("Training done.")
     return losses
-
 
 
 # -----------------------------------------------
@@ -260,7 +259,7 @@ if __name__ == "__main__":
     elif params.adadelta:
         OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho)
     else:
-        OPTIMIZER = optim.RMSprop(MODEL.parameters(),lr=params.lr)
+        OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr)
 
     # Load data
     # when data_size = (32, None), the width is not fixed
@@ -279,7 +278,8 @@ if __name__ == "__main__":
     VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
                             collate_fn=data.data_utils.pad_packed_collate)
     # Train model
-    train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
+    if params.train:
+        train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
 
     # eventually save model
     if params.save:
@@ -288,7 +288,4 @@ if __name__ == "__main__":
 
     # Test model
     test(MODEL, CRITERION, TEST_LOADER, params.batch_size)
-
-
-
     del MODEL
