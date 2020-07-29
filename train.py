@@ -19,7 +19,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '1,2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -95,7 +95,7 @@ def test(model, criterion, test_loader, batch_size):
         # print(img.type)
         with torch.no_grad():
             preds = model(img)
-        preds_size = Variable(torch.LongTensor([preds.size(0)]  * img.size(0)))
+        preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
 
         # Process labels for CTCLoss
         labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
@@ -140,9 +140,11 @@ def test(model, criterion, test_loader, batch_size):
     return avg_cost, avg_CER, avg_WER
 
 
-def val(model, criterion, val_loader):
+def val(model, criterion, val_loader, batch_size):
     model.eval()
     avg_cost = 0
+    avg_CER = 0
+    avg_WER = 0
 
     for iter_idx, (img, transcr) in enumerate(tqdm(val_loader)):
         # Process predictions
@@ -165,11 +167,22 @@ def val(model, criterion, val_loader):
         cost = criterion(preds, labels, preds_size, label_lengths)  # / batch_size
         avg_cost += cost.item()
 
+        # Convert paths to string for metrics
+        tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
+        for k in range(len(tdec)):
+            tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
+            dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
+            # Compute metrics
+            avg_CER += CER(transcr[k], dec_transcr)
+            avg_WER += WER(transcr[k], dec_transcr)
+
     avg_cost = avg_cost / len(val_loader)
-    return avg_cost
+    avg_CER = avg_CER / (len(val_loader) * batch_size)
+    avg_WER = avg_WER / (len(val_loader) * batch_size)
+    return avg_cost, avg_CER, avg_WER
 
 
-def train(model, criterion, optimizer, train_loader, val_loader):
+def train(model, criterion, optimizer, train_loader, val_loader, batch_size):
     print("Starting training...")
     losses = []
 
@@ -207,7 +220,7 @@ def train(model, criterion, optimizer, train_loader, val_loader):
 
         # log the loss
         if params.save:
-            writer.add_scalar('train loss', avg_cost, epoch)
+            writer.add_scalar('train loss', avg_cost, params.previous_epochs + epoch)
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
         tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
@@ -215,12 +228,16 @@ def train(model, criterion, optimizer, train_loader, val_loader):
         if params.save:
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
                 [icdict[t] for t in tt]).replace('_', '')
-            writer.add_image(dec_transcr, img[0], epoch)
+            writer.add_image(dec_transcr, img[0], params.previous_epochs + epoch)
 
         # Validation
-        val_loss = val(model, criterion, val_loader)
-        if params.save:
-            writer.add_scalar('val loss', val_loss, epoch)
+        val_loss, val_CER, val_WER = val(model, criterion, val_loader, batch_size)
+        if params.save and epoch % 5 == 0:
+            writer.add_scalar('val loss', val_loss, params.previous_epochs + epoch)
+            writer.add_scalar('val CER', val_CER, params.previous_epochs + epoch)
+            writer.add_scalar('val WER', val_WER, params.previous_epochs + epoch)
+            # Save model
+            torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
 
         losses.append(avg_cost)
         # print("img = ", img.shape)
@@ -255,11 +272,11 @@ if __name__ == "__main__":
 
     # Initialize optimizer
     if params.adam:
-        OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, betas=(params.beta1, 0.999))
+        OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
     elif params.adadelta:
-        OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho)
+        OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho, weight_decay=params.weight_decay)
     else:
-        OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr)
+        OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
 
     # Load data
     # when data_size = (32, None), the width is not fixed
@@ -279,7 +296,7 @@ if __name__ == "__main__":
                             collate_fn=data.data_utils.pad_packed_collate)
     # Train model
     if params.train:
-        train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
+        train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER, params.batch_size)
 
     # eventually save model
     if params.save:
@@ -288,4 +305,5 @@ if __name__ == "__main__":
 
     # Test model
     test(MODEL, CRITERION, TEST_LOADER, params.batch_size)
+    test(MODEL, CRITERION, TRAIN_LOADER, params.batch_size)
     del MODEL

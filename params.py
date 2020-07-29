@@ -12,7 +12,7 @@ icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        root_path = '/media/vn_nguyen/hdd/hux/Results/'
+        root_path = '/media/vn_nguyen/hdd/hux/Results/Resnet/'
         # self.log_dir = root_path + 'test{}'.format(len(os.listdir(root_path)) + 1)
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         if not os.path.exists(self.log_dir):
@@ -29,6 +29,8 @@ class BaseOptions():
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')  #
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
+        # PARAMETERS FOR PLOT
+        parser.add_argument('--previous_epochs', type=int, default=0)
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
         parser.add_argument('--batch_size', type=int, default=16)

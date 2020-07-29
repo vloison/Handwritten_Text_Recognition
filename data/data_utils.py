@@ -47,12 +47,13 @@ def gather_iam_line(set = 'train'):
             name_parts = name.split('-')
             pathlist = [root_path] + ['-'.join(name_parts[:i+1]) for i in range(len(name_parts))]
             line_name = pathlist[-1]
-            if (info[1] != 'ok') or (line_name not in data_set): # if the line is not properly segmented
+            if (info[1] != 'ok') or (line_name not in data_set):  # if the line is not properly segmented
                 continue
             img_path = '/'.join(pathlist)
             transcr = ' '.join(info[8:])
             gt.append((img_path, transcr))
     return gt
+
 
 def iam_main_loader(set = 'train', data_aug = False):
     '''
