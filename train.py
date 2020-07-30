@@ -19,7 +19,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -231,11 +231,12 @@ def train(model, criterion, optimizer, train_loader, val_loader, batch_size):
             writer.add_image(dec_transcr, img[0], params.previous_epochs + epoch)
 
         # Validation
-        val_loss, val_CER, val_WER = val(model, criterion, val_loader, batch_size)
-        if params.save and epoch % 5 == 0:
-            writer.add_scalar('val loss', val_loss, params.previous_epochs + epoch)
-            writer.add_scalar('val CER', val_CER, params.previous_epochs + epoch)
-            writer.add_scalar('val WER', val_WER, params.previous_epochs + epoch)
+        if epoch % 5 == 0:
+            val_loss, val_CER, val_WER = val(model, criterion, val_loader, batch_size)
+            if params.save:
+                writer.add_scalar('val loss', val_loss, params.previous_epochs + epoch)
+                writer.add_scalar('val CER', val_CER, params.previous_epochs + epoch)
+                writer.add_scalar('val WER', val_WER, params.previous_epochs + epoch)
             # Save model
             torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
 
