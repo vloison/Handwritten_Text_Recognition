@@ -1,5 +1,5 @@
 import data.data_utils
-import data.Preprocessing as Preprocessing
+from data.Preprocessing import preprocessing
 from PIL import Image
 import numpy as np
 import torch
@@ -10,10 +10,11 @@ from torch.utils.data import DataLoader
 
 class myDataset(Dataset):
     def __init__(self, data_type = 'IAM', set = 'train', data_size=(32, None),
-                 affine = False, centered = False, data_aug = False):
+                 affine = False, centered = False, deslant = False, data_aug = False):
         self.data_size = data_size
         self.affine = affine
         self.centered = centered
+        self.deslant = deslant
         if data_type == 'IAM':
             self.data = data.data_utils.iam_main_loader(set, data_aug)
 
@@ -26,7 +27,8 @@ class myDataset(Dataset):
         gt = self.data[item][1]
 
         # data pre-processing
-        img = Preprocessing.preprocessing(img, self.data_size, affine=self.affine, centered=self.centered)
+        img = preprocessing(img, self.data_size, affine=self.affine,
+                            centered=self.centered, deslant=self.deslant)
 
         # data to tensor
         img = torch.Tensor(img).float().unsqueeze(0)

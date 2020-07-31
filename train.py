@@ -19,7 +19,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -140,7 +140,7 @@ def test(model, criterion, test_loader, batch_size):
     return avg_cost, avg_CER, avg_WER
 
 
-def val(model, criterion, val_loader, batch_size):
+def val(model, criterion, val_loader):
     model.eval()
     avg_cost = 0
     avg_CER = 0
@@ -177,12 +177,12 @@ def val(model, criterion, val_loader, batch_size):
             avg_WER += WER(transcr[k], dec_transcr)
 
     avg_cost = avg_cost / len(val_loader)
-    avg_CER = avg_CER / (len(val_loader) * batch_size)
-    avg_WER = avg_WER / (len(val_loader) * batch_size)
+    avg_CER = avg_CER / (len(val_loader) * params.batch_size)
+    avg_WER = avg_WER / (len(val_loader) * params.batch_size)
     return avg_cost, avg_CER, avg_WER
 
 
-def train(model, criterion, optimizer, train_loader, val_loader, batch_size):
+def train(model, criterion, optimizer, train_loader, val_loader):
     print("Starting training...")
     losses = []
 
@@ -232,13 +232,13 @@ def train(model, criterion, optimizer, train_loader, val_loader, batch_size):
 
         # Validation
         if epoch % 5 == 0:
-            val_loss, val_CER, val_WER = val(model, criterion, val_loader, batch_size)
+            val_loss, val_CER, val_WER = val(model, criterion, val_loader)
             if params.save:
                 writer.add_scalar('val loss', val_loss, params.previous_epochs + epoch)
                 writer.add_scalar('val CER', val_CER, params.previous_epochs + epoch)
                 writer.add_scalar('val WER', val_WER, params.previous_epochs + epoch)
-            # Save model
-            torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
+                # Save model
+                torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
 
         losses.append(avg_cost)
         # print("img = ", img.shape)
@@ -281,9 +281,12 @@ if __name__ == "__main__":
 
     # Load data
     # when data_size = (32, None), the width is not fixed
-    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train', data_aug=params.data_aug)
-    test_set = myDataset(data_size=(params.imgH, params.imgW), set='test')
-    val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1')
+    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train',
+                            centered = False, deslant = False, data_aug=params.data_aug)
+    test_set = myDataset(data_size=(params.imgH, params.imgW), set='test',
+                            centered = False, deslant = False)
+    val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1',
+                            centered = False, deslant = False)
     print("len(train_set) =", train_set.__len__())
     print("len(test_set) =", test_set.__len__())
     print("len(val1_set) =", val1_set.__len__())
@@ -297,7 +300,7 @@ if __name__ == "__main__":
                             collate_fn=data.data_utils.pad_packed_collate)
     # Train model
     if params.train:
-        train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER, params.batch_size)
+        train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
 
     # eventually save model
     if params.save:
@@ -306,5 +309,5 @@ if __name__ == "__main__":
 
     # Test model
     test(MODEL, CRITERION, TEST_LOADER, params.batch_size)
-    test(MODEL, CRITERION, TRAIN_LOADER, params.batch_size)
+    # test(MODEL, CRITERION, TRAIN_LOADER, params.batch_size)
     del MODEL

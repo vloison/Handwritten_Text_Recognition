@@ -12,7 +12,7 @@ icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        root_path = '/media/vn_nguyen/hdd/hux/Results/Resnet/'
+        root_path = '/media/vn_nguyen/hdd/hux/Results/'
         # self.log_dir = root_path + 'test{}'.format(len(os.listdir(root_path)) + 1)
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         if not os.path.exists(self.log_dir):
@@ -28,13 +28,15 @@ class BaseOptions():
         parser.add_argument('--train', type=bool, default=True, help='Train a network or not')
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')  #
-        parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
+        # parser.add_argument('--pretrained', type=str,
+        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adadelta/07-30_11:36:27/netRCNN.pth')
+        parser.add_argument('--save', type=bool, default=False, help='Whether to save the trained network')
         # PARAMETERS FOR PLOT
         parser.add_argument('--previous_epochs', type=int, default=0)
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
-        parser.add_argument('--batch_size', type=int, default=16)
-        parser.add_argument('--epochs', type=int, default=60, help='Training epoch number')
+        parser.add_argument('--batch_size', type=int, default=32)
+        parser.add_argument('--epochs', type=int, default=300, help='Training epoch number')
         # Optimizer
         parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
         parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
