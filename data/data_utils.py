@@ -96,10 +96,10 @@ def pad_packed_collate(batch):
     """
     if len(batch) == 1:
         sigs, labels = batch[0][0], batch[0][1]
-        sigs = sigs.t()
+        # sigs = sigs.t()
         lengths = [sigs.size(0)]
         sigs.unsqueeze_(0)
-        labels.unsqueeze_(0)
+        labels = [labels]
     if len(batch) > 1:
         sigs, labels, lengths = zip(
             *[(a, b, a.size(2)) for (a, b) in sorted(batch, key=lambda x: x[0].size(2), reverse=True)])

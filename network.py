@@ -108,6 +108,7 @@ class RCNN(nn.Module):
         assert h == 1, "the height of conv must be 1"
         conv = conv.squeeze(2)
         conv = conv.permute(2, 0, 1)
+        # print("conv =", conv)
         # Recurrent network
         output = self.recnet(conv)
         # add log_softmax to converge output

@@ -35,6 +35,84 @@ class myDataset(Dataset):
 
         return img, gt
 
+import lmdb
+import six
+import sys
+from PIL import Image
+import linecache
+import os
+
+class lmdbDataset(Dataset):
+
+    def __init__(self, root='/media/vn_nguyen/hdd/hux/BRNO/lines/',
+                 dataset='train.easy', data_size=(32, 400)):
+        self.root = root + dataset
+        self.env = lmdb.open(self.root.encode("utf8"), map_size=int(1e9))
+        self.dataset = '/media/vn_nguyen/hdd/hux/BRNO/' + dataset
+        self.data_size = data_size
+
+        linenum = len(open(self.dataset, 'rU').readlines())
+
+        # delete existing mdb if exists
+        path = ''.join(self.root + '/data.mdb')
+        if os.path.exists(path):
+            os.remove(path)
+        path = ''.join(self.root + '/lock.mdb')
+        if os.path.exists(path):
+            os.remove(path)
+        with self.env.begin(write=True) as txn:
+            # print(linenum)
+            for i in range(linenum):
+                line = linecache.getline(self.dataset, i+1).strip()
+                img = 'image-%08d' % i
+                label = 'label-%08d' % i
+                txn.put(img.encode(), (root + line[:50]).encode())
+                txn.put(label.encode(), line[51:].encode())
+
+        if not self.env:
+            print('cannot creat lmdb from %s' % (self.root))
+            sys.exit(0)
+
+        # with self.env.begin(write=False) as txn:
+        #     nSamples = int(txn.get('num-samples'.encode('utf-8')))
+        #     self.nSamples = nSamples
+
+        self.nSamples = linenum
+
+    def __len__(self):
+        return self.nSamples
+
+    def __getitem__(self, index):
+        assert index <= self.nSamples # len(self), 'index range error'
+        # index += 1
+        # line = linecache.getline(self.dataset, index).strip()
+        with self.env.begin(write=False) as txn:
+            img_key = 'image-%08d' % index
+            # print(img_key)
+            imgbuf = txn.get(img_key.encode('utf-8')).decode()
+            # print(imgbuf)
+            # buf = six.BytesIO()
+            # buf.write(imgbuf)
+            # buf.seek(0)
+            try:
+                img = Image.open(''.join(imgbuf)).convert('L')
+            except IOError:
+                print('Corrupted image for %d' % index)
+                return self[index + 1]
+
+            img = 1 - np.asarray(img).astype(np.float32) / 255.0
+            img = preprocessing(img, data_size=self.data_size)
+            img = torch.Tensor(img).float().unsqueeze(0)
+
+
+            label_key = 'label-%08d' % index
+            label = txn.get(label_key.encode('utf-8')).decode()
+            # label = line[52:]
+
+        return (img, label)
+
+
+
 
 # test above functions
 if __name__ == '__main__':

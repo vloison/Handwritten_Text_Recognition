@@ -6,9 +6,12 @@ from params import *
 import data.data_utils
 from torch.nn import CTCLoss
 from data.myDataset import myDataset
+from data.myDataset import lmdbDataset
+
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import torch.optim as optim
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.autograd import Variable
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
@@ -19,7 +22,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -80,7 +83,7 @@ In this block
 """
 
 
-def test(model, criterion, test_loader, batch_size):
+def test(model, criterion, test_loader):
     print("Starting testing...")
     model.eval()
 
@@ -130,8 +133,8 @@ def test(model, criterion, test_loader, batch_size):
                                         round(WER(transcr[k], dec_transcr), 2)) + ']', 0)
 
     avg_cost = avg_cost / len(test_loader)
-    avg_CER = avg_CER / (len(test_loader) * batch_size)
-    avg_WER = avg_WER / (len(test_loader) * batch_size)
+    avg_CER = avg_CER / (len(test_loader) * params.batch_size)
+    avg_WER = avg_WER / (len(test_loader) * params.batch_size)
     print('Average CTCloss', avg_cost)
     print("Average CER", avg_CER)
     print("Average WER", avg_WER)
@@ -182,7 +185,7 @@ def val(model, criterion, val_loader):
     return avg_cost, avg_CER, avg_WER
 
 
-def train(model, criterion, optimizer, train_loader, val_loader):
+def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader):
     print("Starting training...")
     losses = []
 
@@ -210,12 +213,18 @@ def train(model, criterion, optimizer, train_loader, val_loader):
                 preds_size = preds_size.cuda()
                 labels = labels.cuda()
                 label_lengths = label_lengths.cuda()
+
             cost = criterion(preds, labels, preds_size, label_lengths)# / batch_size
             avg_cost += cost.item()
             cost.backward()
             optimizer.step()
+            lr_scheduler.step()
             # del preds_size, labels, label_lengths, cost
             # del img, preds, preds_size, labels, label_lengths, cost
+            # if iter_idx > 0 and iter_idx % 100 == 0:
+            #     print('Epoch[%d/%d] Avg Training Loss: %f'
+            #           % (epoch + 1, params.epochs, avg_cost/(iter_idx*params.batch_size)))
+
         avg_cost = avg_cost/len(train_loader)
 
         # log the loss
@@ -276,8 +285,12 @@ if __name__ == "__main__":
         OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
     elif params.adadelta:
         OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho, weight_decay=params.weight_decay)
+    elif params.sgd:
+        OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum, weight_decay=params.weight_decay)
     else:
         OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+    # lr changing while training
+    LR_SCHEDULER = MultiStepLR(OPTIMIZER, params.milestones, gamma=0.1)
 
     # Load data
     # when data_size = (32, None), the width is not fixed
@@ -287,6 +300,11 @@ if __name__ == "__main__":
                             centered = False, deslant = False)
     val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1',
                             centered = False, deslant = False)
+    # load OCR dataset
+    # train_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='train.easy')
+    # test_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='test.easy')
+    # val1_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='valid.easy')
+
     print("len(train_set) =", train_set.__len__())
     print("len(test_set) =", test_set.__len__())
     print("len(val1_set) =", val1_set.__len__())
@@ -300,7 +318,7 @@ if __name__ == "__main__":
                             collate_fn=data.data_utils.pad_packed_collate)
     # Train model
     if params.train:
-        train(MODEL, CRITERION, OPTIMIZER, TRAIN_LOADER, VAL_LOADER)
+        train(MODEL, CRITERION, OPTIMIZER, LR_SCHEDULER, TRAIN_LOADER, VAL_LOADER)
 
     # eventually save model
     if params.save:
@@ -308,6 +326,6 @@ if __name__ == "__main__":
         print("Network saved at location %s" % log_dir)
 
     # Test model
-    test(MODEL, CRITERION, TEST_LOADER, params.batch_size)
+    test(MODEL, CRITERION, TEST_LOADER)
     # test(MODEL, CRITERION, TRAIN_LOADER, params.batch_size)
     del MODEL
