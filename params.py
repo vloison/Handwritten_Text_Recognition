@@ -17,7 +17,7 @@ icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        root_path = '/media/vn_nguyen/hdd/hux/Results_network/SGD/'
+        root_path = '/media/vn_nguyen/hdd/hux/Results/'
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         # self.log_dir = root_path + '07-31_16:15:27'
         if not os.path.exists(self.log_dir):
