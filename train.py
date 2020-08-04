@@ -22,7 +22,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -255,7 +255,9 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader):
         # print("labels = ", labels)
         # print("preds_size = ", preds_size)
         # print("label_lengths = ", label_lengths)
-        print('Epoch[%d/%d] \n Average Training Loss: %f \n Average validation loss: %f' % (epoch+1, params.epochs, avg_cost, val_loss))
+
+        print('Epoch[%d/%d] lr = %f \n Average Training Loss: %f \n Average validation loss: %f'
+              % (epoch+1, params.epochs, optimizer.param_groups[0]['lr'], avg_cost, val_loss))
 
     print("Training done.")
     return losses
@@ -289,8 +291,7 @@ if __name__ == "__main__":
         OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum, weight_decay=params.weight_decay)
     else:
         OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
-    # lr changing while training
-    LR_SCHEDULER = MultiStepLR(OPTIMIZER, params.milestones, gamma=0.1)
+
 
     # Load data
     # when data_size = (32, None), the width is not fixed
@@ -308,6 +309,9 @@ if __name__ == "__main__":
     print("len(train_set) =", train_set.__len__())
     print("len(test_set) =", test_set.__len__())
     print("len(val1_set) =", val1_set.__len__())
+
+    # lr changing while training
+    LR_SCHEDULER = MultiStepLR(OPTIMIZER, milestones=[i * (int)(len(train_set)/params.batch_size + 1) for i in params.milestones])
 
     # augmentation using data sampler
     TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,

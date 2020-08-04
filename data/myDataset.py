@@ -47,11 +47,6 @@ class lmdbDataset(Dataset):
     def __init__(self, root='/media/vn_nguyen/hdd/hux/BRNO/lines/',
                  dataset='train.easy', data_size=(32, 400)):
         self.root = root + dataset
-        self.env = lmdb.open(self.root.encode("utf8"), map_size=int(1e9))
-        self.dataset = '/media/vn_nguyen/hdd/hux/BRNO/' + dataset
-        self.data_size = data_size
-
-        linenum = len(open(self.dataset, 'rU').readlines())
 
         # delete existing mdb if exists
         path = ''.join(self.root + '/data.mdb')
@@ -60,6 +55,13 @@ class lmdbDataset(Dataset):
         path = ''.join(self.root + '/lock.mdb')
         if os.path.exists(path):
             os.remove(path)
+
+        self.env = lmdb.open(self.root.encode("utf8"), map_size=int(1e9), lock=False)
+        self.dataset = '/media/vn_nguyen/hdd/hux/BRNO/' + dataset
+        self.data_size = data_size
+
+        linenum = len(open(self.dataset, 'rU').readlines())
+
         with self.env.begin(write=True) as txn:
             # print(linenum)
             for i in range(linenum):
