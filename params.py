@@ -19,7 +19,6 @@ class BaseOptions():
         self.initialized = False
         root_path = '/media/vn_nguyen/hdd/hux/Results/'
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
-        # self.log_dir = root_path + '08-03_22:08:15'
         if not os.path.exists(self.log_dir):
             os.mkdir(self.log_dir)
 
@@ -34,7 +33,7 @@ class BaseOptions():
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')  #
         # parser.add_argument('--pretrained', type=str,
-        #                     default='/media/vn_nguyen/hdd/hux/Results_network/SGD/08-03_22:08:15/netRCNN.pth')
+        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adadelta/07-30_11:36:27/netRCNN.pth')
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
         # PARAMETERS FOR PLOT
         parser.add_argument('--previous_epochs', type=int, default=0)

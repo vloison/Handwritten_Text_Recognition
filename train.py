@@ -75,6 +75,7 @@ def net_init():
 
     return rcnn
 
+
 # -----------------------------------------------
 """
 In this block
@@ -83,7 +84,7 @@ In this block
 """
 
 
-def test(model, criterion, test_loader):
+def test(model, criterion, test_loader, len_test_set):
     print("Starting testing...")
     model.eval()
 
@@ -113,28 +114,37 @@ def test(model, criterion, test_loader):
 
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
-        for k in range(len(tdec)):
-            tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
+
+        if tdec.ndim == 1:  # If the batch has size 1
+            tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
             dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
             # Compute metrics
-            avg_CER += CER(transcr[k], dec_transcr)
-            avg_WER += WER(transcr[k], dec_transcr)
-            if iter_idx % 50 == 0 and k % 2 == 0:
-                print('label:', transcr[k])
-                print('prediction:', dec_transcr)
-                print('CER:', CER(transcr[k], dec_transcr))
-                print('WER:', WER(transcr[k], dec_transcr))
-                if params.save:
-                    writer.add_text(transcr[k],
-                                    dec_transcr + '  --[CER=' + str(
-                                        round(CER(transcr[k], dec_transcr), 2)) + ']', 0)
-                    writer.add_text(transcr[k],
-                                    dec_transcr + '  --[WER=' + str(
-                                        round(WER(transcr[k], dec_transcr), 2)) + ']', 0)
+            avg_CER += CER(transcr[0], dec_transcr)
+            avg_WER += WER(transcr[0], dec_transcr)
+        else:
+            for k in range(len(tdec)):
+                tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
+                dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
+                # Compute metrics
+                avg_CER += CER(transcr[k], dec_transcr)
+                avg_WER += WER(transcr[k], dec_transcr)
+
+                if iter_idx % 50 == 0 and k % 2 == 0:
+                    print('label:', transcr[k])
+                    print('prediction:', dec_transcr)
+                    print('CER:', CER(transcr[k], dec_transcr))
+                    print('WER:', WER(transcr[k], dec_transcr))
+                    if params.save:
+                        writer.add_text(transcr[k],
+                                        dec_transcr + '  --[CER=' + str(
+                                            round(CER(transcr[k], dec_transcr), 2)) + ']', 0)
+                        writer.add_text(transcr[k],
+                                        dec_transcr + '  --[WER=' + str(
+                                            round(WER(transcr[k], dec_transcr), 2)) + ']', 0)
 
     avg_cost = avg_cost / len(test_loader)
-    avg_CER = avg_CER / (len(test_loader) * params.batch_size)
-    avg_WER = avg_WER / (len(test_loader) * params.batch_size)
+    avg_CER = avg_CER / len_test_set
+    avg_WER = avg_WER / len_test_set
     print('Average CTCloss', avg_cost)
     print("Average CER", avg_CER)
     print("Average WER", avg_WER)
@@ -143,7 +153,7 @@ def test(model, criterion, test_loader):
     return avg_cost, avg_CER, avg_WER
 
 
-def val(model, criterion, val_loader):
+def val(model, criterion, val_loader, len_val_set):
     model.eval()
     avg_cost = 0
     avg_CER = 0
@@ -172,20 +182,28 @@ def val(model, criterion, val_loader):
 
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
-        for k in range(len(tdec)):
-            tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
+        if len(tdec) == 1:
+            tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
             dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
             # Compute metrics
             avg_CER += CER(transcr[k], dec_transcr)
             avg_WER += WER(transcr[k], dec_transcr)
+        else:
+            for k in range(len(tdec)):
+                tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
+                dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
+                # Compute metrics
+                avg_CER += CER(transcr[k], dec_transcr)
+                avg_WER += WER(transcr[k], dec_transcr)
 
     avg_cost = avg_cost / len(val_loader)
-    avg_CER = avg_CER / (len(val_loader) * params.batch_size)
-    avg_WER = avg_WER / (len(val_loader) * params.batch_size)
+    avg_CER = avg_CER / len_val_set
+    avg_WER = avg_WER / len_val_set
     return avg_cost, avg_CER, avg_WER
 
 
-def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader):
+def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, len_val_set):
+
     print("Starting training...")
     losses = []
 
@@ -213,8 +231,8 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader):
                 preds_size = preds_size.cuda()
                 labels = labels.cuda()
                 label_lengths = label_lengths.cuda()
+            cost = criterion(preds, labels, preds_size, label_lengths)  # / batch_size
 
-            cost = criterion(preds, labels, preds_size, label_lengths)# / batch_size
             avg_cost += cost.item()
             cost.backward()
             optimizer.step()
@@ -241,7 +259,7 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader):
 
         # Validation
         if epoch % 5 == 0:
-            val_loss, val_CER, val_WER = val(model, criterion, val_loader)
+            val_loss, val_CER, val_WER = val(model, criterion, val_loader, len_val_set)
             if params.save:
                 writer.add_scalar('val loss', val_loss, params.previous_epochs + epoch)
                 writer.add_scalar('val CER', val_CER, params.previous_epochs + epoch)
@@ -288,27 +306,30 @@ if __name__ == "__main__":
     elif params.adadelta:
         OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho, weight_decay=params.weight_decay)
     elif params.sgd:
-        OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum, weight_decay=params.weight_decay)
+        OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum)
     else:
         OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
-
 
     # Load data
     # when data_size = (32, None), the width is not fixed
     train_set = myDataset(data_size=(params.imgH, params.imgW), set='train',
-                            centered = False, deslant = False, data_aug=params.data_aug)
+                          centered=False, deslant=False, data_aug=params.data_aug)
     test_set = myDataset(data_size=(params.imgH, params.imgW), set='test',
-                            centered = False, deslant = False)
+                         centered=False, deslant=False)
     val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1',
-                            centered = False, deslant = False)
+                         centered=False, deslant=False)
+
+    LEN_TRAIN_SET = train_set.__len__()
+    LEN_TEST_SET = test_set.__len__()
+    LEN_VAL1_SET = val1_set.__len__()
+    print("len(train_set) =", LEN_TRAIN_SET)
+    print("len(test_set) =", LEN_TEST_SET)
+    print("len(val1_set) =", LEN_VAL1_SET)
+
     # load OCR dataset
     # train_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='train.easy')
     # test_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='test.easy')
     # val1_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='valid.easy')
-
-    print("len(train_set) =", train_set.__len__())
-    print("len(test_set) =", test_set.__len__())
-    print("len(val1_set) =", val1_set.__len__())
 
     # lr changing while training
     LR_SCHEDULER = MultiStepLR(OPTIMIZER, milestones=[i * (int)(len(train_set)/params.batch_size + 1) for i in params.milestones])
@@ -322,7 +343,7 @@ if __name__ == "__main__":
                             collate_fn=data.data_utils.pad_packed_collate)
     # Train model
     if params.train:
-        train(MODEL, CRITERION, OPTIMIZER, LR_SCHEDULER, TRAIN_LOADER, VAL_LOADER)
+        train(MODEL, CRITERION, OPTIMIZER, LR_SCHEDULER, TRAIN_LOADER, VAL_LOADER, LEN_VAL1_SET)
 
     # eventually save model
     if params.save:
@@ -330,6 +351,6 @@ if __name__ == "__main__":
         print("Network saved at location %s" % log_dir)
 
     # Test model
-    test(MODEL, CRITERION, TEST_LOADER)
+    test(MODEL, CRITERION, TEST_LOADER, LEN_TEST_SET)
     # test(MODEL, CRITERION, TRAIN_LOADER, params.batch_size)
     del MODEL
