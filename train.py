@@ -182,12 +182,12 @@ def val(model, criterion, val_loader, len_val_set):
 
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
-        if len(tdec) == 1:
+        if tdec.ndim == 1:
             tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
             dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
             # Compute metrics
-            avg_CER += CER(transcr[k], dec_transcr)
-            avg_WER += WER(transcr[k], dec_transcr)
+            avg_CER += CER(transcr[0], dec_transcr)
+            avg_WER += WER(transcr[0], dec_transcr)
         else:
             for k in range(len(tdec)):
                 tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
@@ -250,7 +250,10 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             writer.add_scalar('train loss', avg_cost, params.previous_epochs + epoch)
         # Convert paths to string for metrics
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
-        tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
+        if tdec.ndim == 1:  # If the batch has size 1
+            tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
+        else:
+            tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
 
         if params.save:
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(

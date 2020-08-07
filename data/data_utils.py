@@ -8,12 +8,12 @@ import torch
 from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
 
 
-line_gt = '/media/vn_nguyen/hdd/hux/IAM/lines.txt'
-line_img = '/media/vn_nguyen/hdd/hux/IAM/lines/'
-line_train = '/media/vn_nguyen/hdd/hux/IAM/split/trainset.txt'
-line_test = '/media/vn_nguyen/hdd/hux/IAM/split/testset.txt'
-line_val1 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset1.txt'
-line_val2 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset2.txt'
+line_gt = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/lines.txt'
+line_img = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/lines/'
+line_train = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/trainset.txt'
+line_test = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/testset.txt'
+line_val1 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/validationset1.txt'
+line_val2 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/validationset2.txt'
 
 
 '''
