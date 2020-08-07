@@ -309,7 +309,8 @@ if __name__ == "__main__":
         if params.adam:
             OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
         elif params.adadelta:
-            OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho, weight_decay=params.weight_decay)
+            OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho,
+                                       weight_decay=params.weight_decay)
         elif params.sgd:
             OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum)
         else:
@@ -318,7 +319,8 @@ if __name__ == "__main__":
     # Load optimizer state
     else:
         if params.adam:
-            OPTIMIZER = optim.Adam(MODEL.parameters(), betas=(params.beta1, 0.999), weight_decay=params.weight_decay)
+            OPTIMIZER = optim.Adam(MODEL.parameters(), betas=(params.beta1, params.beta2),
+                                   weight_decay=params.weight_decay)
         elif params.adadelta:
             OPTIMIZER = optim.Adadelta(MODEL.parameters(), rho=params.rho, weight_decay=params.weight_decay)
         elif params.sgd:
