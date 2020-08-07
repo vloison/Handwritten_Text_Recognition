@@ -44,7 +44,7 @@ import os
 
 class lmdbDataset(Dataset):
 
-    def __init__(self, root='/media/vn_nguyen/hdd/hux/BRNO/lines/',
+    def __init__(self, root='/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/BRNO_/lines/',
                  dataset='train.easy', data_size=(32, 400)):
         self.root = root + dataset
 
@@ -57,7 +57,7 @@ class lmdbDataset(Dataset):
             os.remove(path)
 
         self.env = lmdb.open(self.root.encode("utf8"), map_size=int(1e9), lock=False)
-        self.dataset = '/media/vn_nguyen/hdd/hux/BRNO/' + dataset
+        self.dataset = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/BRNO_/' + dataset
         self.data_size = data_size
 
         linenum = len(open(self.dataset, 'rU').readlines())
