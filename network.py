@@ -3,11 +3,13 @@ import torch as torch
 import torch.nn.functional as F
 from params import *
 import torchvision.models as models
+from custom_resnet import customresnet
 from collections import OrderedDict
 
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, imheight, nc, n_layers, n_out, conv, batch_norm, max_pool, resnet=False):
+    def __init__(self, imheight, nc, n_layers, n_out, conv, batch_norm, max_pool, bool_resnet18=False,
+                 bool_custom_resnet=False):
         """
         Feature extractor for the RCNN
         :param imheight: height of the images that will be given as input of the network.
@@ -20,10 +22,15 @@ class FeatureExtractor(nn.Module):
         (kernel size, stride and padding).
         """
         super(FeatureExtractor, self).__init__()
-        if resnet:
-            resnet18 = models.resnet18(pretrained=False)
-            resnet18.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
-            network = torch.nn.Sequential(*(list(resnet18.children())[:-2]))
+        if bool_resnet18:
+            resnet18network = models.resnet18(pretrained=False)
+            resnet18network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            network = torch.nn.Sequential(*(list(resnet18network.children())[:-2]))
+
+        elif bool_custom_resnet:
+            custom_resnet_network = customresnet()
+            custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            network = torch.nn.Sequential(*(list(custom_resnet_network.children())[:-2]))
         else:
             network = nn.Sequential()
             # Create layers iteratively
@@ -93,9 +100,11 @@ class RNN(nn.Module):
 class RCNN(nn.Module):
     """ RCNN for HTR """
     def __init__(self, imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm,
-                 max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, resnet=False, dropout=0.0):
+                 max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, resnet18=False, custom_resnet=False,
+                 dropout=0.0):
         super(RCNN, self).__init__()
-        self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool, resnet)
+        self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool,
+                                              resnet18, custom_resnet)
         self.recnet = RNN(n_r_layers, n_conv_out[-1], n_hidden, n_out, bidirectional, dropout)
 
     def forward(self, input):
@@ -116,12 +125,11 @@ class RCNN(nn.Module):
         return output
 
 
-
 if __name__ == "__main__":
     params, log_dir = BaseOptions().parser()
 
     print('Example of usage')
-    x = torch.randn(8, 1, params.imgH, params.imgW)  # nSamples, nChannels, Height, Width
+    x = torch.randn(1, 1, params.imgH, 400)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
     fullrcnn = RCNN(imheight=params.imgH,
@@ -134,7 +142,7 @@ if __name__ == "__main__":
                     n_r_layers=params.N_REC_LAYERS,
                     n_hidden=params.N_HIDDEN,
                     n_out=params.N_CHARACTERS,
-                    bidirectional=True, resnet=False)
+                    bidirectional=True, resnet18=False, custom_resnet=False)
     # The arguments of RCNN are defined in params.py
     print('Network \n', fullrcnn)
 

@@ -3,6 +3,7 @@ import argparse
 import time
 
 alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
+
 # alphabet = [' ', '!', '"', '&', '(', ')', '*', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 #               ':', ';', '=', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
 #               'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', ']', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
@@ -17,7 +18,7 @@ icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        root_path = '/media/vn_nguyen/hdd/hux/Results/'
+        root_path = '/media/vn_nguyen/hdd/hux/Results/Resnet/'
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         if not os.path.exists(self.log_dir):
             os.mkdir(self.log_dir)
@@ -26,14 +27,16 @@ class BaseOptions():
         parser.add_argument('--log_dir', type=str, default=self.log_dir)
         # DATA PARAMETERS
         parser.add_argument('--imgH', type=int, default=32)
-        parser.add_argument('--imgW', type=int, default=3200)
+        parser.add_argument('--imgW', type=int, default=400)
         parser.add_argument('--data_aug', type=bool, default=False)
-        # PARAMETERS FOR LOADING/SAVING NETWORKS
+        # PARAMETERS FOR LOADING/SAVING NETWORKS AND OPTIMIZER STATES
         parser.add_argument('--train', type=bool, default=True, help='Train a network or not')
         parser.add_argument('--weights_init', type=bool, default=True)
-        parser.add_argument('--pretrained', type=str, default='')  #
+        parser.add_argument('--pretrained', type=str, default='')
         # parser.add_argument('--pretrained', type=str,
         #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adadelta/07-30_11:36:27/netRCNN.pth')
+        parser.add_argument('--optim_state', type=str, default='',
+                            help='Path to optimizer state of the pretrained model')
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
         # PARAMETERS FOR PLOT
         parser.add_argument('--previous_epochs', type=int, default=0)
@@ -47,12 +50,14 @@ class BaseOptions():
         parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
         parser.add_argument('--sgd', type=bool, default=False, help='Use SGD or not')
         parser.add_argument('--momentum', type=float, default=0.0, help='SGD momentum')
-        parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for adam, default=0.5')
+        parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam, default=0.5')
         parser.add_argument('--lr', type=float, default=0.00001, help='Learning rate')
         parser.add_argument('--rho', type=float, default=0.9, help='rho for ADADELTA')
         parser.add_argument('--weight_decay', type=float, default=0, help='weight decay (L2 penalty) ')
         # PARAMETERS FOR THE FEATURE EXTRACTOR
-        parser.add_argument('--RESNET18', type=bool, default=True)  # if using resnet18, we need imgW at least 3200
+        parser.add_argument('--RESNET18', type=bool, default=False)  # if using resnet18, we need imgW at least 3200
+        parser.add_argument('--custom_resnet', type=bool, default=True,
+                            help="Custom version of resnet18 that can handle image width of 400")
         parser.add_argument('--N_CONV_LAYERS', type=int, default=7)  # 7
         parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of RCNN')
         # Convolutional layers

@@ -22,7 +22,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -61,7 +61,8 @@ def net_init():
                         n_hidden=params.N_HIDDEN,
                         n_out=params.N_CHARACTERS,
                         bidirectional=params.BIDIRECTIONAL,
-                        resnet=params.RESNET18,
+                        resnet18=params.RESNET18,
+                        custom_resnet=params.custom_resnet,
                         dropout=params.DROPOUT)
 
     if params.pretrained != '':
@@ -206,7 +207,7 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
 
     print("Starting training...")
     losses = []
-
+    print("optimizer.param_groups[0]['lr'] at beginning of training", optimizer.param_groups[0]['lr'])
     optimizer.zero_grad()
 
     for epoch in range(params.epochs):
@@ -301,14 +302,29 @@ if __name__ == "__main__":
         MODEL = MODEL.cuda()
 
     # Initialize optimizer
-    if params.adam:
-        OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
-    elif params.adadelta:
-        OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho, weight_decay=params.weight_decay)
-    elif params.sgd:
-        OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum)
+    if params.optim_state == '':
+        if params.adam:
+            OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+        elif params.adadelta:
+            OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho, weight_decay=params.weight_decay)
+        elif params.sgd:
+            OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum)
+        else:
+            OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+
+    # Load optimizer state
     else:
-        OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+        if params.adam:
+            OPTIMIZER = optim.Adam(MODEL.parameters(), betas=(params.beta1, 0.999), weight_decay=params.weight_decay)
+        elif params.adadelta:
+            OPTIMIZER = optim.Adadelta(MODEL.parameters(), rho=params.rho, weight_decay=params.weight_decay)
+        elif params.sgd:
+            OPTIMIZER = optim.SGD(MODEL.parameters(), momentum=params.momentum)
+        else:
+            OPTIMIZER = optim.RMSprop(MODEL.parameters(), weight_decay=params.weight_decay)
+        print('Loading optimizer state from %s' % params.optim_state)
+        OPTIMIZER.load_state_dict(torch.load(params.optim_state))
+        print("Loading done.")
 
     # Load data
     # when data_size = (32, None), the width is not fixed
@@ -331,8 +347,11 @@ if __name__ == "__main__":
     # test_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='test.easy')
     # val1_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='valid.easy')
 
+    # print("optimizer.param_groups[0]['lr'] before LR_SCHEDULER", OPTIMIZER.param_groups[0]['lr'])
     # lr changing while training
-    LR_SCHEDULER = MultiStepLR(OPTIMIZER, milestones=[i * (int)(len(train_set)/params.batch_size + 1) for i in params.milestones])
+    LR_SCHEDULER = MultiStepLR(OPTIMIZER,
+                               milestones=[i * (int)(len(train_set)/params.batch_size + 1) for i in params.milestones])
+    # print("optimizer.param_groups[0]['lr'] after LR_SCHEDULER", OPTIMIZER.param_groups[0]['lr'])
 
     # augmentation using data sampler
     TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
@@ -341,16 +360,18 @@ if __name__ == "__main__":
                              collate_fn=data.data_utils.pad_packed_collate)
     VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
                             collate_fn=data.data_utils.pad_packed_collate)
+
     # Train model
     if params.train:
         train(MODEL, CRITERION, OPTIMIZER, LR_SCHEDULER, TRAIN_LOADER, VAL_LOADER, LEN_VAL1_SET)
 
-    # eventually save model
+    # eventually save model and optimizer state
     if params.save:
         torch.save(MODEL.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
         print("Network saved at location %s" % log_dir)
+        torch.save(OPTIMIZER.state_dict(), '{0}/optimizer_state.pth'.format(log_dir))
+        print("Optimizer state saved at location %s" % log_dir)
 
     # Test model
     test(MODEL, CRITERION, TEST_LOADER, LEN_TEST_SET)
-    # test(MODEL, CRITERION, TRAIN_LOADER, params.batch_size)
     del MODEL

@@ -7,13 +7,23 @@ import os
 import torch
 from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
 
+# PATH TO HDD
+# line_gt = '/media/vn_nguyen/hdd/hux/IAM/lines.txt'
+# line_img = '/media/vn_nguyen/hdd/hux/IAM/lines/'
+# line_train = '/media/vn_nguyen/hdd/hux/IAM/split/trainset.txt'
+# line_test = '/media/vn_nguyen/hdd/hux/IAM/split/testset.txt'
+# line_val1 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset1.txt'
+# line_val2 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset2.txt'
 
-line_gt = '/media/vn_nguyen/hdd/hux/IAM/lines.txt'
-line_img = '/media/vn_nguyen/hdd/hux/IAM/lines/'
-line_train = '/media/vn_nguyen/hdd/hux/IAM/split/trainset.txt'
-line_test = '/media/vn_nguyen/hdd/hux/IAM/split/testset.txt'
-line_val1 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset1.txt'
-line_val2 = '/media/vn_nguyen/hdd/hux/IAM/split/validationset2.txt'
+# PATH TO SSD
+line_gt = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/lines.txt'
+line_img = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/lines/'
+line_train = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/trainset.txt'
+line_test = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/testset.txt'
+line_val1 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/validationset1.txt'
+line_val2 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/validationset2.txt'
+
+
 
 
 '''
@@ -55,7 +65,7 @@ def gather_iam_line(set = 'train'):
     return gt
 
 
-def iam_main_loader(set = 'train', data_aug = False):
+def iam_main_loader(set='train', data_aug=False):
     '''
     Store pairs of image and its ground truth text
     return: List[Tuple(nparray(image), str(ground truth text))]
@@ -67,7 +77,7 @@ def iam_main_loader(set = 'train', data_aug = False):
     for i, (img_path, transcr) in enumerate(tqdm(line_map)):
         try:
             img = img_io.imread(img_path + '.png')
-            if set == 'train' and data_aug: # augment data with shear
+            if set == 'train' and data_aug:  # augment data with shear
                 tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
                 inverted_img = util.invert(img)
                 tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
