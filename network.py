@@ -29,7 +29,10 @@ class FeatureExtractor(nn.Module):
 
         elif bool_custom_resnet:
             custom_resnet_network = customresnet()
-            custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            # For a prediction size of 100 on an image of width 400
+            # custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            # For a prediction size of 200 on an image of width 400
+            custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=(2, 1), padding=3, bias=False)
             network = torch.nn.Sequential(*(list(custom_resnet_network.children())[:-2]))
         else:
             network = nn.Sequential()
@@ -142,7 +145,7 @@ if __name__ == "__main__":
                     n_r_layers=params.N_REC_LAYERS,
                     n_hidden=params.N_HIDDEN,
                     n_out=params.N_CHARACTERS,
-                    bidirectional=True, resnet18=True, custom_resnet=False)
+                    bidirectional=True, resnet18=False, custom_resnet=True)
     # The arguments of RCNN are defined in params.py
     # print('Network \n', fullrcnn)
 
