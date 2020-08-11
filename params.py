@@ -21,7 +21,7 @@ icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        root_path = '/media/vn_nguyen/hdd/hux/Results/Resnet/'
+        root_path = '/media/vn_nguyen/hdd/hux/Results/'
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         if not os.path.exists(self.log_dir):
             os.mkdir(self.log_dir)
@@ -31,14 +31,15 @@ class BaseOptions():
         # DATA PARAMETERS
         parser.add_argument('--dataset', type=str, default='IAM')
         parser.add_argument('--imgH', type=int, default=32)
-        parser.add_argument('--imgW', type=int, default=3200)
+        parser.add_argument('--imgW', type=int, default=400)
         parser.add_argument('--data_aug', type=bool, default=False)
+        parser.add_argument('--keep_ratio', type=bool, default=True)
         # PARAMETERS FOR LOADING/SAVING NETWORKS AND OPTIMIZER STATES
         parser.add_argument('--train', type=bool, default=True, help='Train a network or not')
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')
         # parser.add_argument('--pretrained', type=str,
-        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adadelta/07-30_11:36:27/netRCNN.pth')
+        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adam_compare/reload/08-09_22:24:10/netRCNN.pth')
         parser.add_argument('--optim_state', type=str, default='',
                             help='Path to optimizer state of the pretrained model')
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
@@ -46,21 +47,21 @@ class BaseOptions():
         parser.add_argument('--previous_epochs', type=int, default=0)
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
-        parser.add_argument('--batch_size', type=int, default=8)
-        parser.add_argument('--epochs', type=int, default=400, help='Training epoch number')
+        parser.add_argument('--batch_size', type=int, default=32)
+        parser.add_argument('--epochs', type=int, default=100, help='Training epoch number')
         # Optimizer
-        parser.add_argument('--milestones', type=list, default=[200], help='Milestones(epochs) to change lr')
-        parser.add_argument('--adam', type=bool, default=True, help='Use Adam or not')
+        parser.add_argument('--milestones', type=list, default=[30, 60], help='Milestones(epochs) to change lr')
+        parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
         parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
         parser.add_argument('--sgd', type=bool, default=False, help='Use SGD or not')
         parser.add_argument('--momentum', type=float, default=0.0, help='SGD momentum')
         parser.add_argument('--beta1', type=float, default=0.9, help='beta1 for adam, default=0.9')
         parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam.')
-        parser.add_argument('--lr', type=float, default=0.00001, help='Learning rate')
+        parser.add_argument('--lr', type=float, default=0.0001, help='Learning rate')
         parser.add_argument('--rho', type=float, default=0.9, help='rho for ADADELTA')
         parser.add_argument('--weight_decay', type=float, default=0, help='weight decay (L2 penalty) ')
         # PARAMETERS FOR THE FEATURE EXTRACTOR
-        parser.add_argument('--RESNET18', type=bool, default=True)  # if using resnet18, we need imgW at least 3200
+        parser.add_argument('--RESNET18', type=bool, default=False)  # if using resnet18, we need imgW at least 3200
         parser.add_argument('--custom_resnet', type=bool, default=False,
                             help="Custom version of resnet18 that can handle image width of 400")
         parser.add_argument('--N_CONV_LAYERS', type=int, default=7)  # 7

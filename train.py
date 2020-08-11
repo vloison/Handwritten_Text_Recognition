@@ -23,7 +23,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '3'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -244,10 +244,14 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             # if iter_idx > 0 and iter_idx % 100 == 0:
             #     print('Epoch[%d/%d] Avg Training Loss: %f'
             #           % (epoch + 1, params.epochs, avg_cost/(iter_idx*params.batch_size)))
+            # log the loss
+            # if params.save:
+            #     writer.add_scalar('train loss', cost.item()/img.size(0), total_iter)
+            #     total_iter += 1
 
         avg_cost = avg_cost/len(train_loader)
 
-        # log the loss
+        # # log the loss
         if params.save:
             writer.add_scalar('train loss', avg_cost, params.previous_epochs + epoch)
         # Convert paths to string for metrics
@@ -261,6 +265,8 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
                 [icdict[t] for t in tt]).replace('_', '')
             writer.add_image(dec_transcr, img[0], params.previous_epochs + epoch)
+            # Save model
+            torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
 
         # Validation
         if epoch % 5 == 0:
@@ -269,8 +275,6 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
                 writer.add_scalar('val loss', val_loss, params.previous_epochs + epoch)
                 writer.add_scalar('val CER', val_CER, params.previous_epochs + epoch)
                 writer.add_scalar('val WER', val_WER, params.previous_epochs + epoch)
-                # Save model
-                torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
 
         losses.append(avg_cost)
         # print("img = ", img.shape)
@@ -335,12 +339,12 @@ if __name__ == "__main__":
 
     # Load data
     # when data_size = (32, None), the width is not fixed
-    train_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW), keep_ratio=params.keep_ratio,
-                          set='train', centered=False, deslant=False, data_aug=params.data_aug)
-    test_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW), keep_ratio=params.keep_ratio,
-                         set='test', centered=False, deslant=False)
-    val1_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW), keep_ratio=params.keep_ratio,
-                         set='val', centered=False, deslant=False)
+    train_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW),
+                          set='train', centered=False, deslant=False, data_aug=params.data_aug,  keep_ratio=params.keep_ratio,)
+    test_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW),
+                         set='test', centered=False, deslant=False,  keep_ratio=params.keep_ratio)
+    val1_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW),
+                         set='val', centered=False, deslant=False, keep_ratio=params.keep_ratio)
 
     LEN_TRAIN_SET = train_set.__len__()
     LEN_TEST_SET = test_set.__len__()

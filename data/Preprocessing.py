@@ -55,7 +55,7 @@ In this block : Image preprocessing
 '''
 
 
-def img_resize(img, height=None, width=None, keep_ratio=False):
+def img_resize(img, height=None, width=None, keep_ratio=True):
     if height is not None and width is None:
         scale = float(height) / float(img.shape[0])
         width = int(scale * img.shape[1])
@@ -136,7 +136,7 @@ def img_deslant(img):
     return result
 
 
-def preprocessing(img, data_size=(32, None), affine=False, centered=False, deslant=False, keep_ratio=False):
+def preprocessing(img, data_size=(32, None), affine=False, centered=False, deslant=False, keep_ratio=True):
     if centered:
         img = img_centered(img)
     if deslant:
