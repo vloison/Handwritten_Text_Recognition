@@ -1,23 +1,37 @@
-import data.data_utils
-from data.Preprocessing import preprocessing
+# Imports for myDataset
+import data.IAM_dataset
+import data.ICFHR2014_dataset
+from data.Preprocessing import preprocessing, pad_packed_collate
 from PIL import Image
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
+# Imports for lmdb
+import lmdb
+import six
+import sys
+from PIL import Image
+import linecache
+import os
+
 
 
 class myDataset(Dataset):
-    def __init__(self, data_type = 'IAM', set = 'train', data_size=(32, None),
-                 affine = False, centered = False, deslant = False, data_aug = False):
+    def __init__(self, data_type='IAM', set='train', data_size=(32, None), keep_ratio=False,
+                 affine=False, centered=False, deslant=False, data_aug=False):
         self.data_size = data_size
         self.affine = affine
         self.centered = centered
         self.deslant = deslant
+        self.keep_ratio = keep_ratio
         if data_type == 'IAM':
-            self.data = data.data_utils.iam_main_loader(set, data_aug)
-
+            self.data = data.IAM_dataset.iam_main_loader(set, data_aug)
+        elif data_type == 'ICFHR2014':
+            self.data = data.ICFHR2014_dataset.icfhr2014_main_loader(set, data_aug)
+        else:
+            print("data_type unknowm. Valid values are 'IAM' and 'ICFHR2014'.")
 
     def __len__(self):
         return len(self.data)
@@ -35,12 +49,6 @@ class myDataset(Dataset):
 
         return img, gt
 
-import lmdb
-import six
-import sys
-from PIL import Image
-import linecache
-import os
 
 class lmdbDataset(Dataset):
 
@@ -118,12 +126,12 @@ class lmdbDataset(Dataset):
 
 # test above functions
 if __name__ == '__main__':
-    val1_set = myDataset(data_size=(32, None), set='val1')
+    val1_set = myDataset(data_type='ICFHR2014', data_size=(32, None), set='test')
     print("len(val1_set) =", val1_set.__len__())
 
     # augmentation using data sampler
     batch_size = 8
-    val_loader = DataLoader(val1_set, batch_size=batch_size, shuffle=False, num_workers=8, collate_fn=data_utils.pad_packed_collate)
+    val_loader = DataLoader(val1_set, batch_size=batch_size, shuffle=False, num_workers=8, collate_fn=pad_packed_collate)
     for iter_idx, (img, gt) in enumerate(val_loader):
         print("img.size() =", img.data.size())
         print("gt =", gt)

@@ -2,7 +2,10 @@ import os
 import argparse
 import time
 
-alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
+# Alphabet for IAM
+# alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
+# Alphabet for ICFHR2014
+alphabet = """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
 
 # alphabet = [' ', '!', '"', '&', '(', ')', '*', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 #               ':', ';', '=', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
@@ -26,6 +29,7 @@ class BaseOptions():
     def initialize(self, parser):
         parser.add_argument('--log_dir', type=str, default=self.log_dir)
         # DATA PARAMETERS
+        parser.add_argument('--dataset', type=str, default='IAM')
         parser.add_argument('--imgH', type=int, default=32)
         parser.add_argument('--imgW', type=int, default=3200)
         parser.add_argument('--data_aug', type=bool, default=False)

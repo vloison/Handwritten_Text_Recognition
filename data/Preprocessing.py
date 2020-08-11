@@ -4,8 +4,55 @@ from skimage import transform
 
 from skimage import io as img_io
 from skimage.color import rgb2gray
-import torch
 import torch.nn.functional as F
+
+import torch
+from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
+
+# ------------------------------------------------
+'''
+In this block : collate function for DataLoader
+'''
+
+
+def pad_packed_collate(batch):
+    """Puts data, and lengths into a packed_padded_sequence then returns
+       the packed_padded_sequence and the labels. Set use_lengths to True
+       to use this collate function.
+       Args:
+         batch: (list of tuples) [(img, gt)].
+             img is a FloatTensor
+             gt is a str
+       Output:
+         packed_batch: (PackedSequence), see torch.nn.utils.rnn.pack_padded_sequence
+         labels: (Tensor), labels from the file names of the wav.
+    """
+    if len(batch) == 1:
+        sigs, labels = batch[0][0], batch[0][1]
+        # sigs = sigs.t()
+        lengths = [sigs.size(0)]
+        sigs.unsqueeze_(0)
+        labels = [labels]
+    if len(batch) > 1:
+        sigs, labels, lengths = zip(
+            *[(a, b, a.size(2)) for (a, b) in sorted(batch, key=lambda x: x[0].size(2), reverse=True)])
+        n_channel, n_feats, max_len = sigs[0].size()
+        sigs = [torch.cat((s, torch.zeros(n_channel, n_feats, max_len - s.size(2))), 2) if s.size(2) != max_len else s for s in
+                sigs]
+        sigs = torch.stack(sigs, 0)
+    packed_batch = pack(sigs, lengths, batch_first=True)
+    return packed_batch, labels
+
+# ------------------------------------------------
+'''
+In this block : Image preprocessing
+    img_resize
+    img_affine
+    img_centered
+    img_shear
+    img_deslant
+    -> preprocessing
+'''
 
 
 def img_resize(img, height=None, width=None, keep_ratio=False):
@@ -89,13 +136,13 @@ def img_deslant(img):
     return result
 
 
-def preprocessing(img, data_size=(32, None), affine=False, centered=False, deslant=False):
+def preprocessing(img, data_size=(32, None), affine=False, centered=False, deslant=False, keep_ratio=False):
     if centered:
         img = img_centered(img)
     if deslant:
         img = img_deslant(img)
     if affine:
         img = img_affine(img)
-    img = img_resize(img, height=data_size[0], width=data_size[1])
+    img = img_resize(img, height=data_size[0], width=data_size[1], keep_ratio=keep_ratio)
 
     return img

@@ -3,8 +3,9 @@ import os
 import shutil
 import network
 from params import *
-import data.data_utils
+import data.IAM_dataset
 from torch.nn import CTCLoss
+import data.Preprocessing
 from data.myDataset import myDataset
 from data.myDataset import lmdbDataset
 
@@ -22,7 +23,7 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 params, log_dir = BaseOptions().parser()
 print("log_dir =", log_dir)
@@ -307,7 +308,8 @@ if __name__ == "__main__":
     # Initialize optimizer
     if params.optim_state == '':
         if params.adam:
-            OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+            OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, betas=(params.beta1, params.beta2),
+                                   weight_decay=params.weight_decay)
         elif params.adadelta:
             OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho,
                                        weight_decay=params.weight_decay)
@@ -333,12 +335,12 @@ if __name__ == "__main__":
 
     # Load data
     # when data_size = (32, None), the width is not fixed
-    train_set = myDataset(data_size=(params.imgH, params.imgW), set='train',
-                          centered=False, deslant=False, data_aug=params.data_aug)
-    test_set = myDataset(data_size=(params.imgH, params.imgW), set='test',
-                         centered=False, deslant=False)
-    val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1',
-                         centered=False, deslant=False)
+    train_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW), keep_ratio=params.keep_ratio,
+                          set='train', centered=False, deslant=False, data_aug=params.data_aug)
+    test_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW), keep_ratio=params.keep_ratio,
+                         set='test', centered=False, deslant=False)
+    val1_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW), keep_ratio=params.keep_ratio,
+                         set='val', centered=False, deslant=False)
 
     LEN_TRAIN_SET = train_set.__len__()
     LEN_TEST_SET = test_set.__len__()
@@ -360,11 +362,11 @@ if __name__ == "__main__":
 
     # augmentation using data sampler
     TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
-                              collate_fn=data.data_utils.pad_packed_collate)
+                              collate_fn=data.Preprocessing.pad_packed_collate)
     TEST_LOADER = DataLoader(test_set, batch_size=params.batch_size, shuffle=False, num_workers=8,
-                             collate_fn=data.data_utils.pad_packed_collate)
+                             collate_fn=data.Preprocessing.pad_packed_collate)
     VAL_LOADER = DataLoader(val1_set, batch_size=params.batch_size, shuffle=True, num_workers=8,
-                            collate_fn=data.data_utils.pad_packed_collate)
+                            collate_fn=data.Preprocessing.pad_packed_collate)
 
     # Train model
     if params.train:

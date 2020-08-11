@@ -142,9 +142,9 @@ if __name__ == "__main__":
                     n_r_layers=params.N_REC_LAYERS,
                     n_hidden=params.N_HIDDEN,
                     n_out=params.N_CHARACTERS,
-                    bidirectional=True, resnet18=False, custom_resnet=False)
+                    bidirectional=True, resnet18=True, custom_resnet=False)
     # The arguments of RCNN are defined in params.py
-    print('Network \n', fullrcnn)
+    # print('Network \n', fullrcnn)
 
     zbis = fullrcnn(x)
     print('zbis', zbis.shape)
