@@ -6,17 +6,33 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data import random_split
 from torch.utils.data import DataLoader
+import torchvision
+import torchvision.transforms as transforms
 
 
 class myDataset(Dataset):
     def __init__(self, data_type = 'IAM', set = 'train', data_size=(32, None),
-                 affine = False, centered = False, deslant = False, data_aug = False):
-        self.data_size = data_size
-        self.affine = affine
-        self.centered = centered
-        self.deslant = deslant
+                 affine = False, centered = False, deslant = False, data_aug = False, keep_ratio=True):
+        self.data_size  = data_size
+        self.affine     = affine
+        self.centered   = centered
+        self.deslant    = deslant
+        self.keep_ratio = keep_ratio
         if data_type == 'IAM':
             self.data = data.data_utils.iam_main_loader(set, data_aug)
+
+        # color data augmentation
+        brightness = (0.5, 1.5)
+        contrast = (0.5, 1.5)
+        saturation = (0.5, 1.5)
+        hue = (0.2, 0.4)
+        self.transform  = transforms.Compose(
+            [
+                transforms.ToPILImage(),
+                # transforms.ColorJitter(brightness, contrast, saturation, hue)
+                # Other possible data augmentation
+            ]
+            )
 
 
     def __len__(self):
@@ -24,14 +40,16 @@ class myDataset(Dataset):
 
     def __getitem__(self, item):
         img = self.data[item][0]
-        gt = self.data[item][1]
+        gt  = self.data[item][1]
 
         # data pre-processing
         img = preprocessing(img, self.data_size, affine=self.affine,
-                            centered=self.centered, deslant=self.deslant)
+                            centered=self.centered, deslant=self.deslant, keep_ratio=self.keep_ratio)
 
         # data to tensor
         img = torch.Tensor(img).float().unsqueeze(0)
+        img = self.transform(img)
+        img = transforms.ToTensor()(img).float()
 
         return img, gt
 
@@ -49,12 +67,12 @@ class lmdbDataset(Dataset):
         self.root = root + dataset
 
         # delete existing mdb if exists
-        path = ''.join(self.root + '/data.mdb')
-        if os.path.exists(path):
-            os.remove(path)
-        path = ''.join(self.root + '/lock.mdb')
-        if os.path.exists(path):
-            os.remove(path)
+        # path = ''.join(self.root + '/data.mdb')
+        # if os.path.exists(path):
+        #     os.remove(path)
+        # path = ''.join(self.root + '/lock.mdb')
+        # if os.path.exists(path):
+        #     os.remove(path)
 
         self.env = lmdb.open(self.root.encode("utf8"), map_size=int(1e9), lock=False)
         self.dataset = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/BRNO_/' + dataset
@@ -62,14 +80,14 @@ class lmdbDataset(Dataset):
 
         linenum = len(open(self.dataset, 'rU').readlines())
 
-        with self.env.begin(write=True) as txn:
-            # print(linenum)
-            for i in range(linenum):
-                line = linecache.getline(self.dataset, i+1).strip()
-                img = 'image-%08d' % i
-                label = 'label-%08d' % i
-                txn.put(img.encode(), (root + line[:50]).encode())
-                txn.put(label.encode(), line[51:].encode())
+        # with self.env.begin(write=True) as txn:
+        #     # print(linenum)
+        #     for i in range(linenum):
+        #         line = linecache.getline(self.dataset, i+1).strip()
+        #         img = 'image-%08d' % i
+        #         label = 'label-%08d' % i
+        #         txn.put(img.encode(), (root + line[:50]).encode())
+        #         txn.put(label.encode(), line[51:].encode())
 
         if not self.env:
             print('cannot creat lmdb from %s' % (self.root))

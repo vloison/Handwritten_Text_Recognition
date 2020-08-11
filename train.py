@@ -243,10 +243,14 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             # if iter_idx > 0 and iter_idx % 100 == 0:
             #     print('Epoch[%d/%d] Avg Training Loss: %f'
             #           % (epoch + 1, params.epochs, avg_cost/(iter_idx*params.batch_size)))
+            # log the loss
+            # if params.save:
+            #     writer.add_scalar('train loss', cost.item()/img.size(0), total_iter)
+            #     total_iter += 1
 
         avg_cost = avg_cost/len(train_loader)
 
-        # log the loss
+        # # log the loss
         if params.save:
             writer.add_scalar('train loss', avg_cost, params.previous_epochs + epoch)
         # Convert paths to string for metrics
@@ -260,6 +264,8 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
                 [icdict[t] for t in tt]).replace('_', '')
             writer.add_image(dec_transcr, img[0], params.previous_epochs + epoch)
+            # Save model
+            torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
 
         # Validation
         if epoch % 5 == 0:
@@ -268,8 +274,6 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
                 writer.add_scalar('val loss', val_loss, params.previous_epochs + epoch)
                 writer.add_scalar('val CER', val_CER, params.previous_epochs + epoch)
                 writer.add_scalar('val WER', val_WER, params.previous_epochs + epoch)
-                # Save model
-                torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
 
         losses.append(avg_cost)
         # print("img = ", img.shape)
@@ -334,11 +338,16 @@ if __name__ == "__main__":
     # Load data
     # when data_size = (32, None), the width is not fixed
     train_set = myDataset(data_size=(params.imgH, params.imgW), set='train',
-                          centered=False, deslant=False, data_aug=params.data_aug)
+                          centered=False, deslant=False, data_aug=params.data_aug, keep_ratio=params.keep_ratio)
     test_set = myDataset(data_size=(params.imgH, params.imgW), set='test',
-                         centered=False, deslant=False)
+                         centered=False, deslant=False, keep_ratio=params.keep_ratio)
     val1_set = myDataset(data_size=(params.imgH, params.imgW), set='val1',
-                         centered=False, deslant=False)
+                         centered=False, deslant=False, keep_ratio=params.keep_ratio)
+
+    # load OCR dataset
+    # train_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='train.easy')
+    # test_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='test.easy')
+    # val1_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='valid.easy')
 
     LEN_TRAIN_SET = train_set.__len__()
     LEN_TEST_SET = test_set.__len__()
@@ -347,10 +356,7 @@ if __name__ == "__main__":
     print("len(test_set) =", LEN_TEST_SET)
     print("len(val1_set) =", LEN_VAL1_SET)
 
-    # load OCR dataset
-    # train_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='train.easy')
-    # test_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='test.easy')
-    # val1_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='valid.easy')
+
 
     # print("optimizer.param_groups[0]['lr'] before LR_SCHEDULER", OPTIMIZER.param_groups[0]['lr'])
     # lr changing while training
