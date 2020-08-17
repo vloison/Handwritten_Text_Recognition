@@ -244,10 +244,7 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             # if iter_idx > 0 and iter_idx % 100 == 0:
             #     print('Epoch[%d/%d] Avg Training Loss: %f'
             #           % (epoch + 1, params.epochs, avg_cost/(iter_idx*params.batch_size)))
-            # log the loss
-            # if params.save:
-            #     writer.add_scalar('train loss', cost.item()/img.size(0), total_iter)
-            #     total_iter += 1
+
 
         avg_cost = avg_cost/len(train_loader)
 
@@ -283,8 +280,8 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
         # print("preds_size = ", preds_size)
         # print("label_lengths = ", label_lengths)
 
-        print('Epoch[%d/%d] lr = %f \n Average Training Loss: %f \n Average validation loss: %f'
-              % (epoch+1, params.epochs, optimizer.param_groups[0]['lr'], avg_cost, val_loss))
+        print('Epoch[%d/%d] lr = %f \n Avg Training Loss: %f  Avg Validation loss: %f \n Avg CER: %f  Avg WER: %f'
+              % (epoch+1, params.epochs, optimizer.param_groups[0]['lr'], avg_cost, val_loss, val_CER, val_WER))
 
     print("Training done.")
     return losses
@@ -346,17 +343,17 @@ if __name__ == "__main__":
     val1_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW),
                          set='val', centered=False, deslant=False, keep_ratio=params.keep_ratio)
 
+    # load OCR dataset
+    # train_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='train.easy')
+    # test_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='test.easy')
+    # val1_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='valid.easy')
+
     LEN_TRAIN_SET = train_set.__len__()
     LEN_TEST_SET = test_set.__len__()
     LEN_VAL1_SET = val1_set.__len__()
     print("len(train_set) =", LEN_TRAIN_SET)
     print("len(test_set) =", LEN_TEST_SET)
     print("len(val1_set) =", LEN_VAL1_SET)
-
-    # load OCR dataset
-    # train_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='train.easy')
-    # test_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='test.easy')
-    # val1_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='valid.easy')
 
     # print("optimizer.param_groups[0]['lr'] before LR_SCHEDULER", OPTIMIZER.param_groups[0]['lr'])
     # lr changing while training

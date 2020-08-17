@@ -55,7 +55,7 @@ def gather_icfhr2014_line(set='train'):
     return line_map
 
 
-def icfhr2014_main_loader(set='train', data_aug=False):
+def icfhr2014_main_loader(set='train'):
     '''
     Store pairs of image and its ground truth text
     return: List[Tuple(nparray(image), str(ground truth text))]
@@ -69,18 +69,18 @@ def icfhr2014_main_loader(set='train', data_aug=False):
         # Load image and its eventual transformation
         try:
             img = img_io.imread(img_path, as_gray=True)
-            if set == 'train' and data_aug:  # augment data with shear
-                tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
-                inverted_img = util.invert(img)
-                tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
+            # if set == 'train' and data_aug:  # augment data with shear
+            #     tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
+            #     inverted_img = util.invert(img)
+            #     tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
             img = 1 - img
         except:
             print('exception raised')
             # continue
         # Add (image, transcr) to the list
         data += [(img, transcr)]
-        if set == 'train' and data_aug:  # augment data with shear
-            data += [(tf_img, transcr)]
+        # if set == 'train' and data_aug:  # augment data with shear
+        #     data += [(tf_img, transcr)]
     print("Reading done.")
     return data
 

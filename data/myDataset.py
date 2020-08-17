@@ -28,23 +28,27 @@ class myDataset(Dataset):
         self.centered   = centered
         self.deslant    = deslant
         self.keep_ratio = keep_ratio
+        self.data_aug   = data_aug
         if data_type == 'IAM':
-            self.data = data.IAM_dataset.iam_main_loader(set, data_aug)
+            self.data = data.IAM_dataset.iam_main_loader(set)
         elif data_type == 'ICFHR2014':
-            self.data = data.ICFHR2014_dataset.icfhr2014_main_loader(set, data_aug)
+            self.data = data.ICFHR2014_dataset.icfhr2014_main_loader(set)
         else:
             print("data_type unknowm. Valid values are 'IAM' and 'ICFHR2014'.")
 
         # color data augmentation
-        brightness = (0.5, 1.5)
-        contrast = (0.5, 1.5)
-        saturation = (0.5, 1.5)
-        hue = (0.2, 0.4)
+        # brightness = (0.5, 1.5)
+        brightness = (1, 10)
+        contrast = (1, 10)
+        # saturation = (0.5, 1.5)
+        # hue = (0.2, 0.4)
         self.transform  = transforms.Compose(
             [
                 transforms.ToPILImage(),
-                # transforms.ColorJitter(brightness, contrast, saturation, hue)
+                # transforms.ColorJitter(contrast=contrast)
                 # Other possible data augmentation
+                transforms.RandomAffine(degrees=(-3, 3), translate=(0, 0.2), scale=(0.9, 1),
+                                        shear=5, resample=False, fillcolor=0)
             ]
             )
 
@@ -60,10 +64,13 @@ class myDataset(Dataset):
         img = preprocessing(img, self.data_size, affine=self.affine,
                             centered=self.centered, deslant=self.deslant, keep_ratio=self.keep_ratio)
 
-        # data to tensor
-        img = torch.Tensor(img).float().unsqueeze(0)
-        img = self.transform(img)
-        img = transforms.ToTensor()(img).float()
+        # data augmentation
+        if self.data_aug:
+            img = torch.Tensor(img).float().unsqueeze(0)
+            img = self.transform(img)
+            img = transforms.ToTensor()(img).float()
+        else:
+            img = torch.Tensor(img).float().unsqueeze(0)
 
         return img, gt
 

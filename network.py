@@ -32,7 +32,9 @@ class FeatureExtractor(nn.Module):
             # For a prediction size of 100 on an image of width 400
             # custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
             # For a prediction size of 200 on an image of width 400
-            custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=(2, 1), padding=3, bias=False)
+            # custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=(2, 1), padding=3, bias=False)
+            # to have smaller kernel
+            custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=(2, 2), padding=1, bias=False)
             network = torch.nn.Sequential(*(list(custom_resnet_network.children())[:-2]))
         else:
             network = nn.Sequential()
@@ -132,7 +134,7 @@ if __name__ == "__main__":
     params, log_dir = BaseOptions().parser()
 
     print('Example of usage')
-    x = torch.randn(1, 1, params.imgH, 400)  # nSamples, nChannels, Height, Width
+    x = torch.randn(8, 1, params.imgH, 400)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
     fullrcnn = RCNN(imheight=params.imgH,

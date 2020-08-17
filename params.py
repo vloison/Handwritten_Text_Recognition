@@ -4,9 +4,11 @@ import time
 
 # Alphabet for IAM
 # alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
+
 # Alphabet for ICFHR2014
 alphabet = """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
 
+# Alphabet for OCR
 # alphabet = [' ', '!', '"', '&', '(', ')', '*', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 #               ':', ';', '=', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
 #               'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', ']', '_', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
@@ -22,6 +24,7 @@ class BaseOptions():
     def __init__(self):
         self.initialized = False
         root_path = '/media/vn_nguyen/hdd/hux/Results/'
+        # root_path = '/media/vn_nguyen/hdd/hux/Results_network/ocr/'
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         if not os.path.exists(self.log_dir):
             os.mkdir(self.log_dir)
@@ -39,7 +42,7 @@ class BaseOptions():
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')
         # parser.add_argument('--pretrained', type=str,
-        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adam_compare/reload/08-09_22:24:10/netRCNN.pth')
+        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adam_compare/pad/ICFHR/08-16_11:20:21/netRCNN.pth')
         parser.add_argument('--optim_state', type=str, default='',
                             help='Path to optimizer state of the pretrained model')
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
@@ -47,10 +50,10 @@ class BaseOptions():
         parser.add_argument('--previous_epochs', type=int, default=0)
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
-        parser.add_argument('--batch_size', type=int, default=32)
-        parser.add_argument('--epochs', type=int, default=100, help='Training epoch number')
+        parser.add_argument('--batch_size', type=int, default=16)
+        parser.add_argument('--epochs', type=int, default=400, help='Training epoch number')
         # Optimizer
-        parser.add_argument('--milestones', type=list, default=[30, 60], help='Milestones(epochs) to change lr')
+        parser.add_argument('--milestones', type=list, default=[100, 250], help='Milestones(epochs) to change lr')
         parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
         parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
         parser.add_argument('--sgd', type=bool, default=False, help='Use SGD or not')
@@ -62,7 +65,7 @@ class BaseOptions():
         parser.add_argument('--weight_decay', type=float, default=0, help='weight decay (L2 penalty) ')
         # PARAMETERS FOR THE FEATURE EXTRACTOR
         parser.add_argument('--RESNET18', type=bool, default=False)  # if using resnet18, we need imgW at least 3200
-        parser.add_argument('--custom_resnet', type=bool, default=False,
+        parser.add_argument('--custom_resnet', type=bool, default=True,
                             help="Custom version of resnet18 that can handle image width of 400")
         parser.add_argument('--N_CONV_LAYERS', type=int, default=7)  # 7
         parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of RCNN')

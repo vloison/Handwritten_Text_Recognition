@@ -128,14 +128,19 @@ class cResNet(nn.Module):
         # self.conv1 = nn.Conv2d(3, self.inplanes, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        # self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+
         self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=(2, 1),
+        self.avgpool1 = nn.AvgPool2d(kernel_size=2, stride=2, padding=0)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=(1, 1),
                                        dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=(2, 1),
+        self.avgpool2 = nn.AvgPool2d(kernel_size=2, stride=(2, 1), padding=0)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=(1, 1),
                                        dilate=replace_stride_with_dilation[1])
+        self.avgpool3 = nn.AvgPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=(2, 1),
                                        dilate=replace_stride_with_dilation[2])
+        # self.maxpool4 = nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
@@ -183,14 +188,24 @@ class cResNet(nn.Module):
     def _forward_impl(self, x):
         # See note [TorchScript super()]
         x = self.conv1(x)
+        print("x.size() = ", x.size())
         x = self.bn1(x)
         x = self.relu(x)
-        x = self.maxpool(x)
+        # x = self.maxpool(x)
+        print("x.size() = ", x.size())
 
         x = self.layer1(x)
+        x = self.avgpool1(x)
+        print("x.size() = ", x.size())
         x = self.layer2(x)
+        x = self.avgpool2(x)
+        print("x.size() = ", x.size())
         x = self.layer3(x)
+        x = self.avgpool3(x)
+        print("x.size() = ", x.size())
         x = self.layer4(x)
+        # x = self.maxpool4(x)
+        print("x.size() = ", x.size())
 
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
@@ -213,3 +228,15 @@ def customresnet(**kwargs):
 
 
 
+if __name__ == "__main__":
+    print('Example of usage')
+    x = torch.randn(8, 3, 32, 400)  # nSamples, nChannels, Height, Width
+    print('x', x.shape)
+
+    cResNet = customresnet()
+
+    zbis = cResNet(x)
+    print('zbis', zbis.shape)
+
+    #f = fullrcnn.featextractor.network._modules['conv0'](x)
+    #print(f.shape)

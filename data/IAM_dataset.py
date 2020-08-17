@@ -70,7 +70,7 @@ def gather_iam_line(set='train'):
     return gt
 
 
-def iam_main_loader(set='train', data_aug=False):
+def iam_main_loader(set='train'):
     '''
     Store pairs of image and its ground truth text
     return: List[Tuple(nparray(image), str(ground truth text))]
@@ -82,18 +82,18 @@ def iam_main_loader(set='train', data_aug=False):
     for i, (img_path, transcr) in enumerate(tqdm(line_map)):
         try:
             img = img_io.imread(img_path + '.png')
-            if set == 'train' and data_aug:  # augment data with shear
-                tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
-                inverted_img = util.invert(img)
-                tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
-                tf_img = tf_img.astype(np.float32) / 255.0
+            # if set == 'train' and data_aug:  # augment data with shear
+            #     tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
+            #     inverted_img = util.invert(img)
+            #     tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
+            #     tf_img = tf_img.astype(np.float32) / 255.0
             img = 1 - img.astype(np.float32) / 255.0
         except:
             continue
 
         data += [(img, transcr.replace("|", " "))]
-        if set == 'train' and data_aug:  # augment data with shear
-            data += [(tf_img, transcr.replace("|", " "))]
+        # if set == 'train' and data_aug:  # augment data with shear
+        #     data += [(tf_img, transcr.replace("|", " "))]
     return data
 
 # ------------------------------------------------
