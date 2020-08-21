@@ -88,6 +88,7 @@ def iam_main_loader(set='train'):
             #     tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
             #     tf_img = tf_img.astype(np.float32) / 255.0
             img = 1 - img.astype(np.float32) / 255.0
+            # img = img.astype(np.float32) / 255.0
         except:
             continue
 

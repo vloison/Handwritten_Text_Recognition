@@ -6,7 +6,11 @@ import time
 # alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
 
 # Alphabet for ICFHR2014
-alphabet = """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
+# alphabet = """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
+
+# Alphabet for synlines
+alphabet = """_%~`@!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
+
 
 # Alphabet for OCR
 # alphabet = [' ', '!', '"', '&', '(', ')', '*', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -23,7 +27,7 @@ icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        root_path = '/media/vn_nguyen/hdd/hux/Results/'
+        root_path = '/media/vn_nguyen/hdd/hux/Results_network/Adam_compare/pad/ICFHR/'
         # root_path = '/media/vn_nguyen/hdd/hux/Results_network/ocr/'
         self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
         if not os.path.exists(self.log_dir):
@@ -42,7 +46,7 @@ class BaseOptions():
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')
         # parser.add_argument('--pretrained', type=str,
-        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adam_compare/pad/ICFHR/08-16_11:20:21/netRCNN.pth')
+        #                     default='/media/vn_nguyen/hdd/hux/Results_network/Adam_compare/pad/ICFHR/08-18_21:34:44/netRCNN.pth')
         parser.add_argument('--optim_state', type=str, default='',
                             help='Path to optimizer state of the pretrained model')
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
@@ -53,7 +57,7 @@ class BaseOptions():
         parser.add_argument('--batch_size', type=int, default=16)
         parser.add_argument('--epochs', type=int, default=400, help='Training epoch number')
         # Optimizer
-        parser.add_argument('--milestones', type=list, default=[100, 250], help='Milestones(epochs) to change lr')
+        parser.add_argument('--milestones', type=list, default=[50], help='Milestones(epochs) to change lr')
         parser.add_argument('--adam', type=bool, default=False, help='Use Adam or not')
         parser.add_argument('--adadelta', type=bool, default=False, help='Use ADADELTA or not')
         parser.add_argument('--sgd', type=bool, default=False, help='Use SGD or not')

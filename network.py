@@ -134,7 +134,7 @@ if __name__ == "__main__":
     params, log_dir = BaseOptions().parser()
 
     print('Example of usage')
-    x = torch.randn(8, 1, params.imgH, 400)  # nSamples, nChannels, Height, Width
+    x = torch.randn(8, 1, 64, 800)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
     fullrcnn = RCNN(imheight=params.imgH,

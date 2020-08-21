@@ -137,7 +137,7 @@ class cResNet(nn.Module):
         self.avgpool2 = nn.AvgPool2d(kernel_size=2, stride=(2, 1), padding=0)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=(1, 1),
                                        dilate=replace_stride_with_dilation[1])
-        self.avgpool3 = nn.AvgPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0)
+        self.avgpool3 = nn.AvgPool2d(kernel_size=(2, 1), stride=(4, 2), padding=0)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=(2, 1),
                                        dilate=replace_stride_with_dilation[2])
         # self.maxpool4 = nn.MaxPool2d(kernel_size=(2, 1), stride=(2, 1), padding=0)
@@ -230,7 +230,7 @@ def customresnet(**kwargs):
 
 if __name__ == "__main__":
     print('Example of usage')
-    x = torch.randn(8, 3, 32, 400)  # nSamples, nChannels, Height, Width
+    x = torch.randn(8, 3, 64, 800)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
     cResNet = customresnet()

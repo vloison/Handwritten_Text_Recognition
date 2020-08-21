@@ -219,6 +219,7 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
         avg_cost = 0
         for iter_idx, (img, transcr) in enumerate(tqdm(train_loader)):
             # Process predictions
+            # print("img =", img[0])
             img = Variable(img.data.unsqueeze(1))
             if params.cuda and torch.cuda.is_available():
                 img = img.cuda()
@@ -258,6 +259,10 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
         else:
             tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
 
+        print("sample img\n", img.shape)
+        print("sample gt\n", transcr[0])
+        print("lables\n", labels)
+        print("lable_len = ", label_lengths)
         if params.save:
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
                 [icdict[t] for t in tt]).replace('_', '')

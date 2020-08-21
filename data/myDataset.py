@@ -1,6 +1,7 @@
 # Imports for myDataset
 import data.IAM_dataset
 import data.ICFHR2014_dataset
+import data.synlines_dataset
 from data.Preprocessing import preprocessing, pad_packed_collate
 from PIL import Image
 import numpy as np
@@ -33,8 +34,10 @@ class myDataset(Dataset):
             self.data = data.IAM_dataset.iam_main_loader(set)
         elif data_type == 'ICFHR2014':
             self.data = data.ICFHR2014_dataset.icfhr2014_main_loader(set)
+        elif data_type == 'synlines':
+            self.data = data.synlines_dataset.synlines_main_loader(set)
         else:
-            print("data_type unknowm. Valid values are 'IAM' and 'ICFHR2014'.")
+            print("data_type unknowm. Valid values are 'IAM' or 'ICFHR2014' or 'synlines'.")
 
         # color data augmentation
         # brightness = (0.5, 1.5)
@@ -47,8 +50,11 @@ class myDataset(Dataset):
                 transforms.ToPILImage(),
                 # transforms.ColorJitter(contrast=contrast)
                 # Other possible data augmentation
-                transforms.RandomAffine(degrees=(-3, 3), translate=(0, 0.2), scale=(0.9, 1),
-                                        shear=5, resample=False, fillcolor=0)
+                # transforms.RandomAffine(degrees=(-3, 3), translate=(0, 0.2), scale=(0.9, 1),
+                #                         shear=5, resample=False, fillcolor=255),
+                transforms.RandomAffine(degrees=(-3, 3), translate=(0, 0), scale=(0.9, 1),
+                                        shear=5, resample=False, fillcolor=0),
+                # transforms.RandomPerspective(distortion_scale=0.5, p=0.5, interpolation=3, fill=255)
             ]
             )
 
@@ -159,6 +165,7 @@ if __name__ == '__main__':
     val_loader = DataLoader(val1_set, batch_size=batch_size, shuffle=False, num_workers=8, collate_fn=pad_packed_collate)
     for iter_idx, (img, gt) in enumerate(val_loader):
         print("img.size() =", img.data.size())
+        print("img.size() =", img.data)
         print("gt =", gt)
         if iter_idx == 2:
             break
