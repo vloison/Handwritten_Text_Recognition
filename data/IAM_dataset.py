@@ -3,7 +3,9 @@ from skimage import io as img_io
 from skimage import transform
 from skimage import util
 from tqdm import tqdm
+from params import *
 
+params, log_dir = BaseOptions().parser()
 
 # ------------------------------------------------
 '''
@@ -20,12 +22,12 @@ In this block : Define paths to datasets
 
 
 # PATH TO IAM DATASET ON SSD
-line_gt = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/lines.txt'
-line_img = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/lines/'
-line_train = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/trainset.txt'
-line_test = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/testset.txt'
-line_val1 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/validationset1.txt'
-line_val2 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/IAM/split/validationset2.txt'
+line_gt = params.data_path + 'IAM/lines.txt'
+line_img = params.data_path + 'IAM/lines/'
+line_train = params.data_path + 'IAM/split/trainset.txt'
+line_test = params.data_path + 'IAM/split/testset.txt'
+line_val1 = params.data_path + 'IAM/split/validationset1.txt'
+line_val2 = params.data_path + 'IAM/split/validationset2.txt'
 
 
 # ------------------------------------------------
@@ -114,6 +116,6 @@ if __name__ == '__main__':
     data = iam_main_loader(set='test')
     print("length of testset:", len(data))
 
-    data = iam_main_loader(set='val1')
-    print("length of val1 set:", len(data))
+    data = iam_main_loader(set='val')
+    print("length of val set:", len(data))
     print("Success")

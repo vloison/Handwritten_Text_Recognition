@@ -1,9 +1,9 @@
 import numpy as np
 from skimage import io as img_io
-from skimage import transform
-from skimage import util
 from tqdm import tqdm
+from params import *
 
+params, log_dir= BaseOptions().parser()
 
 # ------------------------------------------------
 '''
@@ -11,11 +11,11 @@ In this block : Define paths to datasets
 '''
 
 # PATH TO ICFHR2014 DATASET ON SSD
-LINE_GT_ICFHR2014 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/ICFHR2014/BenthamDatasetR0-GT/Transcriptions/'
-LINE_IMG_ICFHR2014 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/ICFHR2014/BenthamDatasetR0-GT/Images/Lines/'
-LINE_TRAIN_ICFHR2014 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/ICFHR2014/BenthamDatasetR0-GT/Partitions/TrainLines.lst'
-LINE_TEST_ICFHR2014 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/ICFHR2014/BenthamDatasetR0-GT/Partitions/TestLines.lst'
-LINE_VAL_ICFHR2014 = '/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/ICFHR2014/BenthamDatasetR0-GT/Partitions/ValidationLines.lst'
+LINE_GT_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Transcriptions/'
+LINE_IMG_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Images/Lines/'
+LINE_TRAIN_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/TrainLines.lst'
+LINE_TEST_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/TestLines.lst'
+LINE_VAL_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/ValidationLines.lst'
 
 # ------------------------------------------------
 '''
@@ -49,7 +49,7 @@ def gather_icfhr2014_line(set='train'):
         # Get rid of \n character
         transcr = transcr.strip()
         # Ignore trancripts that have length >100 to avoid nan loss
-        if len(transcr) <= 100:
+        if len(transcr) < 100:
             img_path = root_img_path + line_id + '.png'
             line_map.append((img_path, transcr))
     return line_map
@@ -86,29 +86,35 @@ def icfhr2014_main_loader(set='train'):
 
 
 if __name__ == '__main__':
-    dataset = icfhr2014_main_loader('train')
+    dataset = icfhr2014_main_loader('test')
     print(dataset[0][0].shape)
+    for k in range(1):
+        (img_path, transcr) = gather_icfhr2014_line('test')[k]
+        img = img_io.imread(img_path, as_gray=True)
+        # tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
+        # inverted_img = util.invert(img)
+        # tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
+        # print(img.shape)
+        # print(np.max(img))
+        # print(np.min(img))
+        img_io.imsave('/home/loisonv/images/original_image_test{0}.jpg'.format(k), img)
+        img = 1 - img
+        print('transformation')
+        print('max(img)', np.max(img))
+        print('min(img)', np.min(img))
+        img_io.imsave('/home/loisonv/images/after_trans_test{0}.jpg'.format(k), img)
 
-    # (img_path, transcr) = gather_icfhr2014_line('train')[0]
-    # img = img_io.imread(img_path, as_gray=True)
-    # tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
-    # inverted_img = util.invert(img)
-    # tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
-    # img_io.imsave('/home/loisonv/tf_image.jpg', tf_img)
-    # print(img.shape)
-    # print(np.max(img))
-    # print(np.min(img))
-    # img_io.imsave('/home/loisonv/before_trans_as_gray_ioimsave2.jpg', img)
-    # img = 1 - img
-    # print(np.max(img))
-    # print(np.min(img))
-    # img_io.imsave('/home/loisonv/after_trans_as_gray_ioimsave2.jpg', img)
+        from skimage import exposure
+        img = exposure.rescale_intensity(img)
+        print('constrast enhancement')
+        print('max(img)', np.max(img))
+        print('min(img)', np.min(img))
+        img_io.imsave('/home/loisonv/images/constrast_enhancement_test{0}.jpg'.format(k), img)
+        # bla = np.loadtxt(LINE_TEST_ICFHR2014, dtype=str)
+        # print(bla[0])
+        # ident = '002_080_001_01_01'
+        # transcr = np.loadtxt(LINE_GT_ICFHR2014 + ident + '.txt', dtype=str)
+        # print(transcr)
 
-    # bla = np.loadtxt(LINE_TEST_ICFHR2014, dtype=str)
-    # print(bla[0])
-    # ident = '002_080_001_01_01'
-    # transcr = np.loadtxt(LINE_GT_ICFHR2014 + ident + '.txt', dtype=str)
-    # print(transcr)
-
-    # blabla = gather_icfhr2014_line('test')
-    # print(len(blabla))
+        # blabla = gather_icfhr2014_line('test')
+        # print(len(blabla))

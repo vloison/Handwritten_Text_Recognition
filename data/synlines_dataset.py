@@ -42,7 +42,7 @@ def gather_syn_line(set='train'):
         # Get rid of \n character
         # transcr = transcr.strip()
         # Ignore trancripts that have length >100 to avoid nan loss
-        if len(transcr) <= 70:
+        if len(transcr) < 95:
             line_map.append((img_path, transcr))
     return line_map
 

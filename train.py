@@ -23,12 +23,13 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 params, log_dir = BaseOptions().parser()
-print("log_dir =", log_dir)
+
 if params.save:
     writer = SummaryWriter(log_dir)  # TensorBoard(log_dir)
+    print("log_dir =", log_dir)
 else:
     shutil.rmtree(log_dir)
 
@@ -312,41 +313,31 @@ if __name__ == "__main__":
         MODEL = MODEL.cuda()
 
     # Initialize optimizer
-    if params.optim_state == '':
-        if params.adam:
-            OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, betas=(params.beta1, params.beta2),
+    assert params.optimizer in ['adadelta', 'adam', 'rmsprop', 'sgd'], "Unvalid optimizer parameter '{0}'. Supported values are 'rmsprop', 'adam', 'adadelta', and 'sgd'.".format(params.optimizer)
+    if params.optimizer == 'adam':
+        OPTIMIZER = optim.Adam(MODEL.parameters(), lr=params.lr, betas=(params.beta1, params.beta2),
+                               weight_decay=params.weight_decay)
+    if params.optimizer == 'adadelta':
+        OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho,
                                    weight_decay=params.weight_decay)
-        elif params.adadelta:
-            OPTIMIZER = optim.Adadelta(MODEL.parameters(), lr=params.lr, rho=params.rho,
-                                       weight_decay=params.weight_decay)
-        elif params.sgd:
-            OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum)
-        else:
-            OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+    if params.optimizer == 'sgd':
+        OPTIMIZER = optim.SGD(MODEL.parameters(), lr=params.lr, momentum=params.momentum)
 
-    # Load optimizer state
-    else:
-        if params.adam:
-            OPTIMIZER = optim.Adam(MODEL.parameters(), betas=(params.beta1, params.beta2),
-                                   weight_decay=params.weight_decay)
-        elif params.adadelta:
-            OPTIMIZER = optim.Adadelta(MODEL.parameters(), rho=params.rho, weight_decay=params.weight_decay)
-        elif params.sgd:
-            OPTIMIZER = optim.SGD(MODEL.parameters(), momentum=params.momentum)
-        else:
-            OPTIMIZER = optim.RMSprop(MODEL.parameters(), weight_decay=params.weight_decay)
-        print('Loading optimizer state from %s' % params.optim_state)
-        OPTIMIZER.load_state_dict(torch.load(params.optim_state))
-        print("Loading done.")
+    if params.optimizer == 'rmsprop':
+        OPTIMIZER = optim.RMSprop(MODEL.parameters(), lr=params.lr, weight_decay=params.weight_decay)
+
 
     # Load data
     # when data_size = (32, None), the width is not fixed
     train_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW),
-                          set='train', centered=False, deslant=False, data_aug=params.data_aug,  keep_ratio=params.keep_ratio,)
+                          set='train', centered=False, deslant=False, data_aug=params.data_aug,
+                          keep_ratio=params.keep_ratio, enhance_contrast=params.enhance_contrast)
     test_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW),
-                         set='test', centered=False, deslant=False,  keep_ratio=params.keep_ratio)
+                         set='test', centered=False, deslant=False,  keep_ratio=params.keep_ratio,
+                         enhance_contrast=params.enhance_contrast)
     val1_set = myDataset(data_type=params.dataset, data_size=(params.imgH, params.imgW),
-                         set='val', centered=False, deslant=False, keep_ratio=params.keep_ratio)
+                         set='val', centered=False, deslant=False, keep_ratio=params.keep_ratio,
+                         enhance_contrast=params.enhance_contrast)
 
     # load OCR dataset
     # train_set = lmdbDataset(data_size=(params.imgH, params.imgW), dataset='train.easy')
@@ -360,11 +351,9 @@ if __name__ == "__main__":
     print("len(test_set) =", LEN_TEST_SET)
     print("len(val1_set) =", LEN_VAL1_SET)
 
-    # print("optimizer.param_groups[0]['lr'] before LR_SCHEDULER", OPTIMIZER.param_groups[0]['lr'])
     # lr changing while training
     LR_SCHEDULER = MultiStepLR(OPTIMIZER,
                                milestones=[i * (int)(len(train_set)/params.batch_size + 1) for i in params.milestones])
-    # print("optimizer.param_groups[0]['lr'] after LR_SCHEDULER", OPTIMIZER.param_groups[0]['lr'])
 
     # augmentation using data sampler
     TRAIN_LOADER = DataLoader(train_set, batch_size=params.batch_size, shuffle=True, num_workers=8,

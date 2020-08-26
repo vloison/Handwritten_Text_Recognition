@@ -1,10 +1,8 @@
 import numpy as np
 from skimage.transform import resize
 from skimage import transform
+from skimage import exposure
 
-from skimage import io as img_io
-from skimage.color import rgb2gray
-import torch.nn.functional as F
 
 import torch
 from torch.nn.utils.rnn import pack_padded_sequence as pack, pad_packed_sequence as unpack
@@ -136,13 +134,16 @@ def img_deslant(img):
     return result
 
 
-def preprocessing(img, data_size=(32, None), affine=False, centered=False, deslant=False, keep_ratio=True):
+def preprocessing(img, data_size=(32, None), affine=False, centered=False, deslant=False, keep_ratio=True,
+                  enhance_contrast=False):
     if centered:
         img = img_centered(img)
     if deslant:
         img = img_deslant(img)
     if affine:
         img = img_affine(img)
+    if enhance_contrast:
+        img = exposure.rescale_intensity(img)
     img = img_resize(img, height=data_size[0], width=data_size[1], keep_ratio=keep_ratio)
 
     return img

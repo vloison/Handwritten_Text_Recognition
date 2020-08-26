@@ -119,7 +119,7 @@ class RCNN(nn.Module):
 
         # Convert output for RNN
         b, c, h, w = conv.size()
-        assert h == 1, "the height of conv must be 1"
+        assert h == 1, "the height of conv must be 1, and is {0}".format(h)
         conv = conv.squeeze(2)
         conv = conv.permute(2, 0, 1)
         # print("conv =", conv)

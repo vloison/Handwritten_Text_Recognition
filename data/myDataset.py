@@ -16,19 +16,22 @@ import lmdb
 import six
 import sys
 from PIL import Image
+from skimage import io as img_io
+from skimage import draw
 import linecache
 import os
 
 
 
 class myDataset(Dataset):
-    def __init__(self, data_type = 'IAM', set = 'train', data_size=(32, None),
-                 affine = False, centered = False, deslant = False, data_aug = False, keep_ratio=True):
+    def __init__(self, data_type='IAM', set='train', data_size=(32, None),
+                 affine=False, centered=False, deslant=False, data_aug=False, keep_ratio=True, enhance_contrast=False):
         self.data_size  = data_size
         self.affine     = affine
         self.centered   = centered
         self.deslant    = deslant
         self.keep_ratio = keep_ratio
+        self.enhance_contrast = enhance_contrast
         self.data_aug   = data_aug
         if data_type == 'IAM':
             self.data = data.IAM_dataset.iam_main_loader(set)
@@ -41,11 +44,11 @@ class myDataset(Dataset):
 
         # color data augmentation
         # brightness = (0.5, 1.5)
-        brightness = (1, 10)
-        contrast = (1, 10)
+        # brightness = (1, 10)
+        # contrast = (1, 10)
         # saturation = (0.5, 1.5)
         # hue = (0.2, 0.4)
-        self.transform  = transforms.Compose(
+        self.transform = transforms.Compose(
             [
                 transforms.ToPILImage(),
                 # transforms.ColorJitter(contrast=contrast)
@@ -68,7 +71,8 @@ class myDataset(Dataset):
 
         # data pre-processing
         img = preprocessing(img, self.data_size, affine=self.affine,
-                            centered=self.centered, deslant=self.deslant, keep_ratio=self.keep_ratio)
+                            centered=self.centered, deslant=self.deslant, keep_ratio=self.keep_ratio,
+                            enhance_contrast=self.enhance_contrast)
 
         # data augmentation
         if self.data_aug:
@@ -157,15 +161,31 @@ class lmdbDataset(Dataset):
 
 # test above functions
 if __name__ == '__main__':
-    val1_set = myDataset(data_type='ICFHR2014', data_size=(32, None), set='test')
-    print("len(val1_set) =", val1_set.__len__())
+    test_set = myDataset(data_type='ICFHR2014', data_size=(32, 400), set='test', data_aug=True, keep_ratio=True)
+    print("len(test_et_set) =", test_set.__len__())
+    # # DRAW ONE LINE AT EACH PREDICTION
+    # len_prediction = 99  # check value by running network.py
+    # window_width = int(400 / len_prediction)
+    # # Save images with one vertical line at each spot the network makes a prediction
+    # for k in range(10):
+    #     img = train_set[k][0]
+    #     img = img.squeeze(0)
+    #     for l in range(1, len_prediction+1):
+    #         #rr, cc = draw.line(0, window_width*l, 31, window_width*l)
+    #         #img[rr, cc] = 0.6
+    #         img_io.imsave('/home/loisonv/images/train_set_IAM{0}.jpg'.format(k), img)
+
+    # Show data augmentation
+    for k in range(10):
+        img = test_set[k][0]
+        img = img.squeeze(0)
+        img_io.imsave('/home/loisonv/images/test_data_aug_tr0_{0}.jpg'.format(k), img)
 
     # augmentation using data sampler
     batch_size = 8
-    val_loader = DataLoader(val1_set, batch_size=batch_size, shuffle=False, num_workers=8, collate_fn=pad_packed_collate)
-    for iter_idx, (img, gt) in enumerate(val_loader):
+    test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=8, collate_fn=pad_packed_collate)
+    for iter_idx, (img, gt) in enumerate(test_loader):
         print("img.size() =", img.data.size())
-        print("img.size() =", img.data)
         print("gt =", gt)
         if iter_idx == 2:
             break
