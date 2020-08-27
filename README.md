@@ -10,7 +10,7 @@ It wa an internship project under Mathieu Aubry's supervision, at the LIGM lab, 
     1.b The CRNN structure 
     
 2. Installation \
-    2.a : Install conda environment \
+    2.a Install conda environment \
     2.b Download databases
     - IAM dataset
     - ICFHR 2014 dataset
@@ -71,11 +71,14 @@ Your data folder /
 
 ### 3.a Make predictions on your own dataset
 Coming soon...
+``` 
+python train.py --dataset dataset  --data_dir data_dir --pretrained pretrained_model_dir --train ''
+``` 
 
 ### 3.b Train a network from scratch
 
 ``` 
-python train.py --dataset dataset  -- data_dir data_dir --logdir logdir
+python train.py --dataset dataset  --data_dir data_dir
 ``` 
 Before running the code, make sure that you change `ROOT_PATH` variable at the beginning of `params.py` to the path of the folder you want to save your models in. 
 Main arguments : 
