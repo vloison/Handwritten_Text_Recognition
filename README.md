@@ -7,7 +7,7 @@ This github provides a framework to train and test CRNN networks on handwritten 
     1.b The CRNN structure 
     
 2. Installation \
-    2.a : Install conda environment \
+    2.a Install conda environment \
     2.b Download databases
     - IAM dataset
     - ICFHR 2014 dataset
