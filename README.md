@@ -1,6 +1,9 @@
 # Deep Learning framework for Line-level Handwritten Text Recognition
 
-This github provides a framework to train and test CRNN networks on handwritten line-level datasets.
+[Presentation of our project](https://docs.google.com/presentation/d/12Z29QPWQubbgZ_PfHG1yqZ3Cal-d6sHWFJcZ0bJVxH8/edit?usp=sharing)
+
+This github provides a framework to train and test CRNN networks on handwritten line-level datasets. \
+It wa an internship project under Mathieu Aubry's supervision, at the LIGM lab, located in Paris. 
 
 1. Intro \
     1.a The HTR line-level task \
@@ -11,7 +14,6 @@ This github provides a framework to train and test CRNN networks on handwritten 
     2.b Download databases
     - IAM dataset
     - ICFHR 2014 dataset
-
 
 3. How to use
     - Make predictions using our best networks
@@ -38,7 +40,13 @@ conda activate HTR
 
 ### 2.b Download databases
 You will only need to download these databases if you want to train your own network from scratch. The framework is built to train a network on one of these 2 datasets : 
-[IAM](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database) and [ICFHR2014 HTR competition](http://www.transcriptorium.eu/~htrcontest/contestICFHR2014/public_html/). 
+[IAM](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database) and [ICFHR2014 HTR competition](http://www.transcriptorium.eu/~htrcontest/contestICFHR2014/public_html/). [ADD REF TO SLIDES]
+- Before downloading IAM dataset, you need to register on [this](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database) website. Once that's done, you need to download : 
+    - The 'lines' folder at this [link](http://www.fki.inf.unibe.ch/databases/iam-handwriting-database/download-the-iam-handwriting-database).
+    - The 'split' folder at this [link](http://www.fki.inf.unibe.ch/DBs/iamDB/tasks/largeWriterIndependentTextLineRecognitionTask.zip).
+    - The 'lines.txt' file at this link [ADD LINK]. \
+
+- For ICFHR2014 dataset, you need to download the 'BenthamDatasetR0-GT' folder at this [link](https://zenodo.org/record/44519#.X0eXbHkzY2x). \ 
 
 Make sure to download the two databases in the same folder. Structure must be 
 ```
@@ -54,6 +62,8 @@ Your data folder /
             
     ICFHR2014/
         BenthamDatasetR0-GT/ 
+
+    Your own dataset/
 ```
 
 
@@ -89,6 +99,8 @@ Graves et al. [Connectionist Temporal Classification: Labelling Unsegmented Sequ
 Sánchez et al. [A set of benchmarks for Handwritten Text Recognition on historical documents](https://www.sciencedirect.com/science/article/abs/pii/S0031320319302006) \
 Dutta et al. [Improving CNN-RNN Hybrid Networks for
 Handwriting Recognition](http://cdn.iiit.ac.in/cdn/cvit.iiit.ac.in/images/ConferencePapers/2018/improving-cnn-rnn.pdf)
+
+U.-V. Marti, H. Bunke [The IAM-database: an English sentence database for offline handwriting recognition](https://link.springer.com/article/10.1007/s100320200071)
 
 https://github.com/Holmeyoung/crnn-pytorch \
 https://github.com/georgeretsi/HTR-ctc \
