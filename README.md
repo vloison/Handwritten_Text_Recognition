@@ -62,7 +62,7 @@ Your data folder /
 ### 3.a Make predictions on your own dataset
 Coming soon...
 ``` 
-python train.py --dataset dataset  --data_dir data_dir --logdir logdir --train ''
+python train.py --dataset dataset  --data_dir data_dir --logdir logdir --pretrained pretrained_model_dir --train ''
 ``` 
 
 ### 3.b Train a network from scratch
