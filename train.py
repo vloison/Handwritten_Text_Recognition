@@ -63,8 +63,7 @@ def net_init():
                         n_hidden=params.N_HIDDEN,
                         n_out=params.N_CHARACTERS,
                         bidirectional=params.BIDIRECTIONAL,
-                        resnet18=params.RESNET18,
-                        custom_resnet=params.custom_resnet,
+                        feat_extractor=params.feat_extractor,
                         dropout=params.DROPOUT)
 
     if params.pretrained != '':

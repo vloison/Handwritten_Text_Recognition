@@ -22,12 +22,12 @@ In this block : Define paths to datasets
 
 
 # PATH TO IAM DATASET ON SSD
-line_gt = params.data_path + 'IAM/lines.txt'
-line_img = params.data_path + 'IAM/lines/'
-line_train = params.data_path + 'IAM/split/trainset.txt'
-line_test = params.data_path + 'IAM/split/testset.txt'
-line_val1 = params.data_path + 'IAM/split/validationset1.txt'
-line_val2 = params.data_path + 'IAM/split/validationset2.txt'
+line_gt = params.tr_data_path + 'IAM/lines.txt'
+line_img = params.tr_data_path + 'IAM/lines/'
+line_train = params.tr_data_path + 'IAM/split/trainset.txt'
+line_test = params.tr_data_path + 'IAM/split/testset.txt'
+line_val1 = params.tr_data_path + 'IAM/split/validationset1.txt'
+line_val2 = params.tr_data_path + 'IAM/split/validationset2.txt'
 
 
 # ------------------------------------------------

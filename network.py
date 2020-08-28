@@ -8,8 +8,7 @@ from collections import OrderedDict
 
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, imheight, nc, n_layers, n_out, conv, batch_norm, max_pool, bool_resnet18=False,
-                 bool_custom_resnet=False):
+    def __init__(self, imheight, nc, n_layers, n_out, conv, batch_norm, max_pool, feat_extractor):
         """
         Feature extractor for the RCNN
         :param imheight: height of the images that will be given as input of the network.
@@ -22,12 +21,15 @@ class FeatureExtractor(nn.Module):
         (kernel size, stride and padding).
         """
         super(FeatureExtractor, self).__init__()
-        if bool_resnet18:
+
+        assert feat_extractor in ['resnet18', 'custom_resnet', 'conv'], "feat_extractor value invalid. Got {0}. Supported values are 'resnet18', 'custom_resnet' and 'conv'".format(feat_extractor)
+
+        if feat_extractor == 'resnet18':
             resnet18network = models.resnet18(pretrained=False)
             resnet18network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
             network = torch.nn.Sequential(*(list(resnet18network.children())[:-2]))
 
-        elif bool_custom_resnet:
+        if feat_extractor == 'custom_resnet':
             custom_resnet_network = customresnet()
             # For a prediction size of 100 on an image of width 400
             # custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3, bias=False)
@@ -36,7 +38,7 @@ class FeatureExtractor(nn.Module):
             # to have smaller kernel
             custom_resnet_network.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=(2, 2), padding=1, bias=False)
             network = torch.nn.Sequential(*(list(custom_resnet_network.children())[:-2]))
-        else:
+        if feat_extractor == 'conv':
             network = nn.Sequential()
             # Create layers iteratively
             for k in range(n_layers):
@@ -104,12 +106,11 @@ class RNN(nn.Module):
 
 class RCNN(nn.Module):
     """ RCNN for HTR """
-    def __init__(self, imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm,
-                 max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, resnet18=False, custom_resnet=False,
-                 dropout=0.0):
+    def __init__(self, imheight, feat_extractor, nc, n_conv_layers, n_conv_out, conv, batch_norm,
+                 max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, dropout=0.0):
         super(RCNN, self).__init__()
         self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool,
-                                              resnet18, custom_resnet)
+                                              feat_extractor)
         self.recnet = RNN(n_r_layers, n_conv_out[-1], n_hidden, n_out, bidirectional, dropout)
 
     def forward(self, input):
@@ -147,7 +148,7 @@ if __name__ == "__main__":
                     n_r_layers=params.N_REC_LAYERS,
                     n_hidden=params.N_HIDDEN,
                     n_out=params.N_CHARACTERS,
-                    bidirectional=True, resnet18=False, custom_resnet=True)
+                    bidirectional=True, feat_extractor='custom_resnet')
     # The arguments of RCNN are defined in params.py
     # print('Network \n', fullrcnn)
 

@@ -11,11 +11,11 @@ In this block : Define paths to datasets
 '''
 
 # PATH TO ICFHR2014 DATASET ON SSD
-LINE_GT_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Transcriptions/'
-LINE_IMG_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Images/Lines/'
-LINE_TRAIN_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/TrainLines.lst'
-LINE_TEST_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/TestLines.lst'
-LINE_VAL_ICFHR2014 = params.data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/ValidationLines.lst'
+LINE_GT_ICFHR2014 = params.tr_data_path + 'ICFHR2014/BenthamDatasetR0-GT/Transcriptions/'
+LINE_IMG_ICFHR2014 = params.tr_data_path + 'ICFHR2014/BenthamDatasetR0-GT/Images/Lines/'
+LINE_TRAIN_ICFHR2014 = params.tr_data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/TrainLines.lst'
+LINE_TEST_ICFHR2014 = params.tr_data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/TestLines.lst'
+LINE_VAL_ICFHR2014 = params.tr_data_path + 'ICFHR2014/BenthamDatasetR0-GT/Partitions/ValidationLines.lst'
 
 # ------------------------------------------------
 '''

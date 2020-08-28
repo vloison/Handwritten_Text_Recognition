@@ -40,9 +40,12 @@ class BaseOptions():
         # DATA AND PREPROCESSING PARAMETERS
         parser.add_argument('--dataset', type=str, default='ICFHR2014',
                             help="Which dataset to train and test on. Supported values are 'IAM' and 'ICFHR2014'.")
-        parser.add_argument('--data_path', type=str,
+        parser.add_argument('--tr_data_path', type=str,
                             default='/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/',
-                            help="Path to folder containing datasets")
+                            help="Path to folder containing training datasets")
+        parser.add_argument('--data_path', type=str,
+                            default='/home/loisonv/Text_Recognition/images/table/',
+                            help="Path to folder containing datasets for prediction")
         parser.add_argument('--imgH', type=int, default=64)
         parser.add_argument('--imgW', type=int, default=800)
         parser.add_argument('--data_aug', type=bool, default=False)
@@ -73,9 +76,9 @@ class BaseOptions():
         parser.add_argument('--weight_decay', type=float, default=0, help='weight decay (L2 penalty) ')
 
         # FEATURE EXTRACTOR PARAMETERS
-        parser.add_argument('--RESNET18', type=bool, default=False)  # if using resnet18, we need imgW at least 3200
-        parser.add_argument('--custom_resnet', type=bool, default=True,
-                            help="Custom version of resnet18 that can handle image width of 400")
+        parser.add_argument('--feat_extractor', type=str, default='custom_resnet',
+                            help="Which feature extractor to use. Supported values are 'resnet18', 'custom_resnet' and 'conv'.")
+        # Parameters for 'conv' structure
         parser.add_argument('--N_CONV_LAYERS', type=int, default=7)  # 7
         parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of RCNN')
         # Convolutional layers
