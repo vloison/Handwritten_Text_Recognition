@@ -10,19 +10,20 @@ It was an internship project under Mathieu Aubry's supervision, at the LIGM lab,
     1.a The HTR line-level task \
     1.b The CRNN structure 
     
-2. Installation \
-    2.a Install conda environment \
-    2.b Download databases
+2. [Installation](#2-installation) \
+    2.a [Install conda environment](#2a-download--and-activate-conda-environment) \
+    2.b [Download databases](#2b-download-databases)
     - IAM dataset
     - ICFHR 2014 dataset
 
-3. How to use
-    - Make predictions using our best networks
-    - train and test a network on a dataset
+3. [How to use](#3-how-to-use) \
+    3.a [Make predictions on unlabelled data using our best networks](#3a-make-predictions-on-your-own-unlabelled-dataset) \
+    3.b [Train and test a network from scratch](#3b-train-a-network-from-scratch)\
+    3.c [Test a model without retraining it](#3c-test-a-model-without-retraining-it)
 
-4. References
+4. [References](#4-references)
 
-5. Contact
+5. [Contact](#5-contact)
 
 
 ## Introduction 
@@ -77,7 +78,7 @@ Your data folder /
 
 ## 3. How to use
 
-### 3.a Make predictions on your own dataset
+### 3.a Make predictions on your own unlabelled dataset
 
 Running this code will use model stored at `model_path` to make predictions on images stored in `data_path`.
 The predictions will be stored in `predictions.txt`  in `data_path` folder.
