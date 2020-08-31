@@ -2,10 +2,6 @@
 
 [Short presentation of our project](https://docs.google.com/presentation/d/12Z29QPWQubbgZ_PfHG1yqZ3Cal-d6sHWFJcZ0bJVxH8/edit?usp=sharing)
 
-This github provides a framework to train and test CRNN networks on handwritten grayscale line-level datasets. \
-It was an internship project under Mathieu Aubry's supervision, at the LIGM lab, located in Paris. 
-
-
 1. [Introduction](#introduction) \
     1.a The HTR line-level task \
     1.b The CRNN structure 
@@ -27,6 +23,20 @@ It was an internship project under Mathieu Aubry's supervision, at the LIGM lab,
 
 
 ## Introduction 
+
+This work was an internship project under Mathieu Aubry's supervision, at the LIGM lab, located in Paris. 
+
+In HTR, the task is to predict a transcript from an image of a handwritten text. A commonly used structure for this task is Convolutional Recurrent Neural Networks (CRNN). 
+One CRNN network consists of a feature extractor (often with convolutional layers), followed by a recurrent network (LSTM).
+
+**This github provides a framework to train and test CRNN networks on handwritten grayscale line-level datasets.**
+**This github also provides code to generate predictions on an unlabelled, line-level, grayscale line-level dataset.**
+There are several options for the structure of the CRNN used, image preprocessing, dataset used, data augmentation. 
+
+![alt text][image]
+
+[image]: https://github.com/vloison/Handwritten_Text_Recognition/blob/master/crnn_image.PNG
+
 
 
 ## 2. Installation
