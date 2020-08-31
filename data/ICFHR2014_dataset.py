@@ -3,7 +3,7 @@ from skimage import io as img_io
 from tqdm import tqdm
 from params import *
 
-params, log_dir= BaseOptions().parser()
+params = BaseOptions().parser()
 
 # ------------------------------------------------
 '''

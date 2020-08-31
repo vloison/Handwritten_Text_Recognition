@@ -23,15 +23,15 @@ from utils import CER, WER
 In this block
     Set path to log
 """
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
-params, log_dir = BaseOptions().parser()
+params = BaseOptions().parser(verbose=True)
 
 if params.save:
-    writer = SummaryWriter(log_dir)  # TensorBoard(log_dir)
-    print("log_dir =", log_dir)
+    writer = SummaryWriter(params.log_dir)  # TensorBoard(log_dir)
+    print("log_dir =", params.log_dir)
 else:
-    shutil.rmtree(log_dir)
+    shutil.rmtree(params.log_dir)
 
 # -----------------------------------------------
 """
@@ -52,7 +52,7 @@ def weights_init(m):
 
 
 def net_init():
-    rcnn = network.RCNN(imheight=params.imgH,
+    crnn = network.CRNN(imheight=params.imgH,
                         nc=params.NC,
                         n_conv_layers=params.N_CONV_LAYERS,
                         n_conv_out=params.N_CONV_OUT,
@@ -61,7 +61,7 @@ def net_init():
                         max_pool=params.MAX_POOL,
                         n_r_layers=params.N_REC_LAYERS,
                         n_hidden=params.N_HIDDEN,
-                        n_out=params.N_CHARACTERS,
+                        n_out=len(params.alphabet),
                         bidirectional=params.BIDIRECTIONAL,
                         feat_extractor=params.feat_extractor,
                         dropout=params.DROPOUT)
@@ -69,13 +69,13 @@ def net_init():
     if params.pretrained != '':
         print('Loading pretrained model from %s' % params.pretrained)
         # if params.multi_gpu:
-        #    rcnn = torch.nn.DataParallel(rcnn)
-        rcnn.load_state_dict(torch.load(params.pretrained))
+        #    crnn = torch.nn.DataParallel(crnn)
+        crnn.load_state_dict(torch.load(params.pretrained))
         print('Loading done.')
     elif params.weights_init:
-        rcnn.apply(weights_init)
+        crnn.apply(weights_init)
 
-    return rcnn
+    return crnn
 
 
 # -----------------------------------------------
@@ -104,7 +104,7 @@ def test(model, criterion, test_loader, len_test_set):
         preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
 
         # Process labels for CTCLoss
-        labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
+        labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
         label_lengths = torch.LongTensor([len(t) for t in transcr])
         # Compute CTCLoss
         if params.cuda and torch.cuda.is_available():
@@ -119,14 +119,14 @@ def test(model, criterion, test_loader, len_test_set):
 
         if tdec.ndim == 1:  # If the batch has size 1
             tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
-            dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
+            dec_transcr = ''.join([params.icdict[t] for t in tt]).replace('_', '')
             # Compute metrics
             avg_CER += CER(transcr[0], dec_transcr)
             avg_WER += WER(transcr[0], dec_transcr)
         else:
             for k in range(len(tdec)):
                 tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
-                dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
+                dec_transcr = ''.join([params.icdict[t] for t in tt]).replace('_', '')
                 # Compute metrics
                 avg_CER += CER(transcr[k], dec_transcr)
                 avg_WER += WER(transcr[k], dec_transcr)
@@ -172,7 +172,7 @@ def val(model, criterion, val_loader, len_val_set):
         preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
 
         # Process labels for CTCLoss
-        labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
+        labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
         label_lengths = torch.LongTensor([len(t) for t in transcr])
         # Compute CTCLoss
         if params.cuda and torch.cuda.is_available():
@@ -186,14 +186,14 @@ def val(model, criterion, val_loader, len_val_set):
         tdec = preds.argmax(2).permute(1, 0).cpu().numpy().squeeze()
         if tdec.ndim == 1:
             tt = [v for j, v in enumerate(tdec) if j == 0 or v != tdec[j - 1]]
-            dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
+            dec_transcr = ''.join([params.icdict[t] for t in tt]).replace('_', '')
             # Compute metrics
             avg_CER += CER(transcr[0], dec_transcr)
             avg_WER += WER(transcr[0], dec_transcr)
         else:
             for k in range(len(tdec)):
                 tt = [v for j, v in enumerate(tdec[k]) if j == 0 or v != tdec[k][j - 1]]
-                dec_transcr = ''.join([icdict[t] for t in tt]).replace('_', '')
+                dec_transcr = ''.join([params.icdict[t] for t in tt]).replace('_', '')
                 # Compute metrics
                 avg_CER += CER(transcr[k], dec_transcr)
                 avg_WER += WER(transcr[k], dec_transcr)
@@ -227,7 +227,7 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
             # Process labels
             # CTCLoss().cuda() only works with LongTensor
-            labels = Variable(torch.LongTensor([cdict[c] for c in ''.join(transcr)]))
+            labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
             label_lengths = torch.LongTensor([len(t) for t in transcr])
             # criterion = CTC loss
             if params.cuda and torch.cuda.is_available():
@@ -265,10 +265,10 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
         # print("lable_len = ", label_lengths)
         if params.save:
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
-                [icdict[t] for t in tt]).replace('_', '')
+                [params.icdict[t] for t in tt]).replace('_', '')
             writer.add_image(dec_transcr, img[0], params.previous_epochs + epoch)
             # Save model
-            torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
+            torch.save(model.state_dict(), '{0}/netRCNN.pth'.format(params.log_dir))
 
         # Validation
         if epoch % 5 == 0:
@@ -368,10 +368,10 @@ if __name__ == "__main__":
 
     # eventually save model and optimizer state
     if params.save:
-        torch.save(MODEL.state_dict(), '{0}/netRCNN.pth'.format(log_dir))
-        print("Network saved at location %s" % log_dir)
-        torch.save(OPTIMIZER.state_dict(), '{0}/optimizer_state.pth'.format(log_dir))
-        print("Optimizer state saved at location %s" % log_dir)
+        torch.save(MODEL.state_dict(), '{0}/netRCNN.pth'.format(params.log_dir))
+        print("Network saved at location %s" % params.log_dir)
+        torch.save(OPTIMIZER.state_dict(), '{0}/optimizer_state.pth'.format(params.log_dir))
+        print("Optimizer state saved at location %s" % params.log_dir)
 
     # Test model
     test(MODEL, CRITERION, TEST_LOADER, LEN_TEST_SET)

@@ -5,7 +5,7 @@ from skimage import util
 from tqdm import tqdm
 from params import *
 
-params, log_dir = BaseOptions().parser()
+params = BaseOptions().parser()
 
 # ------------------------------------------------
 '''

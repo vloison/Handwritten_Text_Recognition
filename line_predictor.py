@@ -9,7 +9,7 @@ from torch.autograd import Variable
 from skimage import io as img_io
 
 
-params, log_dir = BaseOptions().parser()
+params = BaseOptions().parser()
 
 
 def predict(model, data_loc, imgH, imgW):
@@ -64,7 +64,7 @@ def predict(model, data_loc, imgH, imgW):
 
 if __name__ == "__main__":
 
-    # MODEL = RCNN(imheight=32,
+    # MODEL = CRNN(imheight=32,
     #                     nc=params.NC,
     #                     n_conv_layers=params.N_CONV_LAYERS,
     #                     n_conv_out=params.N_CONV_OUT,
@@ -73,7 +73,7 @@ if __name__ == "__main__":
     #                     max_pool=params.MAX_POOL,
     #                     n_r_layers=params.N_REC_LAYERS,
     #                     n_hidden=params.N_HIDDEN,
-    #                     n_out=params.N_CHARACTERS,
+    #                     n_out=len(params.alphabet),
     #                     bidirectional=params.BIDIRECTIONAL,
     #                     resnet18=params.RESNET18,
     #                     custom_resnet=params.custom_resnet,

@@ -5,16 +5,6 @@ import time
 # ROOT PATH FOR MODELS SAVING
 ROOT_PATH = '/media/vn_nguyen/hdd/hux/Results/'
 
-# Alphabet for IAM
-# alphabet = """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
-
-# Alphabet for ICFHR2014
-alphabet = """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
-
-# Alphabet for synlines
-#alphabet = """_%~`@!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
-
-
 # Alphabet for OCR
 # alphabet = [' ', '!', '"', '&', '(', ')', '*', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 #               ':', ';', '=', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
@@ -22,19 +12,17 @@ alphabet = """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRS
 #               'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '}', '~', '°',
 #               'é', '§', '$', '+', '%', "'", '©', '|', '\\', '#', '@', '£', '€', '®']
 
-cdict = {c: i for i, c in enumerate(alphabet)}  # character -> int
-icdict = {i: c for i, c in enumerate(alphabet)}  # int -> character
 # '_' is the blank character for CTC
 
 
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        root_path = ROOT_PATH
+        # root_path = ROOT_PATH
         # root_path = '/media/vn_nguyen/hdd/hux/Results_network/ocr/'
-        self.log_dir = root_path + time.strftime("%m-%d_%H:%M:%S", time.localtime())
-        if not os.path.exists(self.log_dir):
-           os.mkdir(self.log_dir)
+        self.time = time.strftime("%m-%d_%H:%M:%S", time.localtime())
+        # if not os.path.exists(self.log_dir):
+        #   os.mkdir(self.log_dir)
 
     def initialize(self, parser):
         # DATA AND PREPROCESSING PARAMETERS
@@ -48,16 +36,25 @@ class BaseOptions():
                             help="Path to folder containing datasets for prediction")
         parser.add_argument('--imgH', type=int, default=64)
         parser.add_argument('--imgW', type=int, default=800)
+        parser.add_argument('--alphabet', type=str,
+                          default="""_%~`@!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """)
+        # Alphabet for IAM :
+        # """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
+        # Alphabet for ICFHR2014:
+        # """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
+        # Alphabet for synlines:
+        # """_%~`@!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
         parser.add_argument('--data_aug', type=bool, default=False)
         parser.add_argument('--keep_ratio', type=bool, default=True)
         parser.add_argument('--enhance_contrast', type=bool, default=False,
                             help='Enhance contrast of input images or not. Recommended for ICFHR2014')
         # PARAMETERS FOR LOADING/SAVING NETWORKS AND OPTIMIZER STATES
-        parser.add_argument('--models_path', type=str, default='/home/loisonv')
         parser.add_argument('--train', type=bool, default=True, help='Train a network or not')
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')
         parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
+        parser.add_argument('--save_model_path', type=str, default='/media/vn_nguyen/hdd/hux/Results/',
+                            help="Where to save the network after training")
         # PARAMETERS FOR PLOT
         parser.add_argument('--previous_epochs', type=int, default=0)
         # TRAINING PARAMETERS
@@ -80,7 +77,7 @@ class BaseOptions():
                             help="Which feature extractor to use. Supported values are 'resnet18', 'custom_resnet' and 'conv'.")
         # Parameters for 'conv' structure
         parser.add_argument('--N_CONV_LAYERS', type=int, default=7)  # 7
-        parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of RCNN')
+        parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of CRNN')
         # Convolutional layers
         parser.add_argument('--N_CONV_OUT', type=list,
                             default=[64, 128, 256, 256, 512, 512, 512])  # [16, 32, 64, 128] #
@@ -106,7 +103,6 @@ class BaseOptions():
         # RECURRENT NETWORK PARAMETERS
         parser.add_argument('--N_REC_LAYERS', type=int, default=1, help='Number of recurrent layers in the network.')
         parser.add_argument('--N_HIDDEN', type=int, default=256, help='Number of hidden layers in the recurrent cells')
-        parser.add_argument('--N_CHARACTERS', type=int, default=len(alphabet))
         parser.add_argument('--BIDIRECTIONAL', type=bool, default=True, help='Use bidirectional LSTM or not')
         parser.add_argument('--DROPOUT', type=float, default=0.0, help='Dropout parameter within [0,1] in BLSTM')
 
@@ -125,17 +121,32 @@ class BaseOptions():
         message += '----------------------End---------------------\n'
         print(message)
 
-        opt_file = os.path.join(self.log_dir, 'params.txt')
+        opt_file = os.path.join(opt.__getattribute__('log_dir'), 'params.txt')
         with open(opt_file, 'w') as opt_file:
             opt_file.write(message)
             opt_file.write('\n')
 
-    def parser(self):
+    def parser(self, verbose=False):
+        # Get attributes
         if not self.initialized:
             parser = argparse.ArgumentParser()
             parser = self.initialize(parser)
         opt, _ = parser.parse_known_args()
+        # Add dictionnaries to switch between predictions and labels
+        cdict = {c: i for i, c in enumerate(opt.__getattribute__('alphabet'))}  # character -> int
+        icdict = {i: c for i, c in enumerate(opt.__getattribute__('alphabet'))}  # int -> character
+        opt.__setattr__('cdict', cdict)
+        opt.__setattr__('icdict', icdict)
+        # Add location to save trained network
+        log_dir = opt.__getattribute__('save_model_path') + self.time
+        if not os.path.exists(log_dir):
+            os.mkdir(log_dir)
+        opt.__setattr__('log_dir', log_dir)
+        print('opt', opt)
+        # Update and print
         self.parser = parser
         self.opt = opt
-        self.print_options(self.opt)
-        return self.opt, self.log_dir
+        if verbose:
+            self.print_options(self.opt)
+
+        return self.opt

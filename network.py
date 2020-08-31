@@ -104,11 +104,11 @@ class RNN(nn.Module):
         return output
 
 
-class RCNN(nn.Module):
-    """ RCNN for HTR """
+class CRNN(nn.Module):
+    """ CRNN for HTR """
     def __init__(self, imheight, feat_extractor, nc, n_conv_layers, n_conv_out, conv, batch_norm,
                  max_pool, n_r_layers, n_hidden, n_out, bidirectional=True, dropout=0.0):
-        super(RCNN, self).__init__()
+        super(CRNN, self).__init__()
         self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool,
                                               feat_extractor)
         self.recnet = RNN(n_r_layers, n_conv_out[-1], n_hidden, n_out, bidirectional, dropout)
@@ -132,13 +132,13 @@ class RCNN(nn.Module):
 
 
 if __name__ == "__main__":
-    params, log_dir = BaseOptions().parser()
+    params = BaseOptions().parser()
 
     print('Example of usage')
     x = torch.randn(8, 1, 64, 800)  # nSamples, nChannels, Height, Width
     print('x', x.shape)
 
-    fullrcnn = RCNN(imheight=params.imgH,
+    fullrcnn = CRNN(imheight=params.imgH,
                     nc=params.NC,
                     n_conv_layers=params.N_CONV_LAYERS,
                     n_conv_out=params.N_CONV_OUT,
@@ -147,7 +147,7 @@ if __name__ == "__main__":
                     max_pool=params.MAX_POOL,
                     n_r_layers=params.N_REC_LAYERS,
                     n_hidden=params.N_HIDDEN,
-                    n_out=params.N_CHARACTERS,
+                    n_out=len(params.alphabet),
                     bidirectional=True, feat_extractor='custom_resnet')
     # The arguments of RCNN are defined in params.py
     # print('Network \n', fullrcnn)

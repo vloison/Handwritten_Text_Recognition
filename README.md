@@ -1,9 +1,9 @@
 # Deep Learning framework for Line-level Handwritten Text Recognition
 
-[Presentation of our project](https://docs.google.com/presentation/d/12Z29QPWQubbgZ_PfHG1yqZ3Cal-d6sHWFJcZ0bJVxH8/edit?usp=sharing)
+[Short presentation of our project](https://docs.google.com/presentation/d/12Z29QPWQubbgZ_PfHG1yqZ3Cal-d6sHWFJcZ0bJVxH8/edit?usp=sharing)
 
-This github provides a framework to train and test CRNN networks on handwritten line-level datasets. \
-It wa an internship project under Mathieu Aubry's supervision, at the LIGM lab, located in Paris. 
+This github provides a framework to train and test CRNN networks on handwritten grayscale line-level datasets. \
+It was an internship project under Mathieu Aubry's supervision, at the LIGM lab, located in Paris. 
 
 
 1. Introduction \
@@ -89,17 +89,17 @@ python lines_predictor.py --data_path datapath  --model_path --imgH image_height
 ### 3.b Train a network from scratch
 
 ``` 
-python train.py --dataset dataset  --tr_data_path data_dir
+python train.py --dataset dataset  --tr_data_path data_dir --save_model_path path
 ``` 
 Before running the code, make sure that you change `ROOT_PATH` variable at the beginning of `params.py` to the path of the folder you want to save your models in. 
 Main arguments : 
 - `--dataset`: name of the dataset to train and test on. 
 Supported values are `ICFHR2014` and `IAM`.
 - `--tr_data_path`: location of the train dataset folder on local machine. See section [??] for downloading datasets.
-
+- `--save_model_path`: path of the folder where model will be saved if `params.save` is set to True.
 
 Main learning arguments : 
-- `data_aug`: If set to `True`, will apply random affine data transformation to the training images.
+- `--data_aug`: If set to `True`, will apply random affine data transformation to the training images.
 - `--optimizer`: Which optimizer to use. 
 Supported values are `rmsprop`, `adam`, `adadelta`, and `sgd`. 
 We recommend using RMSprop, which got best results in our experiments. See `params.py` for optimizer-specific parameters.
@@ -115,16 +115,16 @@ We recommend using RMSprop, which got best results in our experiments. See `para
     See conv parameters in `params.py` to choose conv structure.
 
 ### 3.c Test a model without retraining it
-Running this code will compute the average CER and WER of model stored at `model_path` on the testing set of chosen `dataset`.
+Running this code will compute the average CER and WER of model stored at `pretrained_model` path on the testing set of chosen `dataset`.
 ```
-python train.py --train '' --pretrained_model model_path --dataset dataset --tr_data_path data_path 
+python train.py --train '' --save '' --pretrained_model model_path --dataset dataset --tr_data_path data_path 
 ```
 
 Main arguments : 
-- `pretrained_model`: path to state_dict of pretrained model. 
-- `dataset`: Which dataset to test on. 
+- `--pretrained_model`: path to state_dict of pretrained model. 
+- `--dataset`: Which dataset to test on. 
 Supported values are `ICFHR2014` and `IAM`.
-- `tr_data_path`: path to the dataset folder (see section [??])
+- `--tr_data_path`: path to the dataset folder (see section [??])
 ## 4. References
 Graves et al. [Connectionist Temporal Classification: Labelling Unsegmented Sequence Data with Recurrent Neural Networks](https://mediatum.ub.tum.de/doc/1292048/file.pdf) \
 Sánchez et al. [A set of benchmarks for Handwritten Text Recognition on historical documents](https://www.sciencedirect.com/science/article/abs/pii/S0031320319302006) \
@@ -139,4 +139,4 @@ Synthetic line generator : https://github.com/monniert/docExtractor (see [paper]
 
 
 ## 5. Contact
-If youhave questions or remarks about this project, please email us at [virginie.loison@eleves.enpc.fr]() and [xiwei.hu@telecom-paris.fr]().
+If you have questions or remarks about this project, please email us at [virginie.loison@eleves.enpc.fr]() and [xiwei.hu@telecom-paris.fr]().
