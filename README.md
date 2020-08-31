@@ -6,7 +6,7 @@ This github provides a framework to train and test CRNN networks on handwritten 
 It was an internship project under Mathieu Aubry's supervision, at the LIGM lab, located in Paris. 
 
 
-1. Introduction \
+1. [Introduction](##Introduction) \
     1.a The HTR line-level task \
     1.b The CRNN structure 
     
