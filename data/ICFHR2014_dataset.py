@@ -69,18 +69,13 @@ def icfhr2014_main_loader(set='train'):
         # Load image and its eventual transformation
         try:
             img = img_io.imread(img_path, as_gray=True)
-            # if set == 'train' and data_aug:  # augment data with shear
-            #     tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
-            #     inverted_img = util.invert(img)
-            #     tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
-            img = 1 - img
+            #img = 1 - img
         except:
             print('exception raised')
-            # continue
+            continue
         # Add (image, transcr) to the list
         data += [(img, transcr)]
-        # if set == 'train' and data_aug:  # augment data with shear
-        #     data += [(tf_img, transcr)]
+
     print("Reading done.")
     return data
 
@@ -91,30 +86,10 @@ if __name__ == '__main__':
     for k in range(1):
         (img_path, transcr) = gather_icfhr2014_line('test')[k]
         img = img_io.imread(img_path, as_gray=True)
-        # tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
-        # inverted_img = util.invert(img)
-        # tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
-        # print(img.shape)
-        # print(np.max(img))
-        # print(np.min(img))
+
         img_io.imsave('/home/loisonv/images/original_image_test{0}.jpg'.format(k), img)
         img = 1 - img
         print('transformation')
         print('max(img)', np.max(img))
         print('min(img)', np.min(img))
         img_io.imsave('/home/loisonv/images/after_trans_test{0}.jpg'.format(k), img)
-
-        from skimage import exposure
-        img = exposure.rescale_intensity(img)
-        print('constrast enhancement')
-        print('max(img)', np.max(img))
-        print('min(img)', np.min(img))
-        img_io.imsave('/home/loisonv/images/constrast_enhancement_test{0}.jpg'.format(k), img)
-        # bla = np.loadtxt(LINE_TEST_ICFHR2014, dtype=str)
-        # print(bla[0])
-        # ident = '002_080_001_01_01'
-        # transcr = np.loadtxt(LINE_GT_ICFHR2014 + ident + '.txt', dtype=str)
-        # print(transcr)
-
-        # blabla = gather_icfhr2014_line('test')
-        # print(len(blabla))

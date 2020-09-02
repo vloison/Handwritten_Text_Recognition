@@ -84,19 +84,12 @@ def iam_main_loader(set='train'):
     for i, (img_path, transcr) in enumerate(tqdm(line_map)):
         try:
             img = img_io.imread(img_path + '.png')
-            # if set == 'train' and data_aug:  # augment data with shear
-            #     tform = transform.AffineTransform(shear=np.random.uniform(-0.3, 0.3))
-            #     inverted_img = util.invert(img)
-            #     tf_img = transform.warp(inverted_img, tform, order=1, preserve_range=True, mode='constant')
-            #     tf_img = tf_img.astype(np.float32) / 255.0
-            img = 1 - img.astype(np.float32) / 255.0
-            # img = img.astype(np.float32) / 255.0
+            # img = 1 - img.astype(np.float32) / 255.0
+            img = img.astype(np.float32) / 255.0
         except:
             continue
-
         data += [(img, transcr.replace("|", " "))]
-        # if set == 'train' and data_aug:  # augment data with shear
-        #     data += [(tf_img, transcr.replace("|", " "))]
+
     return data
 
 # ------------------------------------------------
@@ -110,11 +103,11 @@ if __name__ == '__main__':
     print(img)
 
     data = iam_main_loader(set='train')
-    print("length of trainset:", len(data))
+    print("length of train set:", len(data))
     print(data[10][0].shape)
 
     data = iam_main_loader(set='test')
-    print("length of testset:", len(data))
+    print("length of test set:", len(data))
 
     data = iam_main_loader(set='val')
     print("length of val set:", len(data))

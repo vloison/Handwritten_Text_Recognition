@@ -13,11 +13,16 @@ In this block : Define paths to datasets
 '''
 
 # PATH TO SYNTHETIC LINES DATASET
-synlines_path = '/home/hux/docExtractor/datasets/synlines_small/'
+# Small dataset
+# synlines_path = '/home/hux/docExtractor/datasets/synlines_small/'
+# Big dataset
+synlines_path = '/home/loisonv/synth_datasets/synlines/'
+
 # ------------------------------------------------
 '''
 In this block : Data utils for synlines dataset
 '''
+
 
 def gather_syn_line(set='train'):
     '''
@@ -42,7 +47,7 @@ def gather_syn_line(set='train'):
         # Get rid of \n character
         # transcr = transcr.strip()
         # Ignore trancripts that have length >100 to avoid nan loss
-        if len(transcr) < 95:
+        if len(transcr) < 70:
             line_map.append((img_path, transcr))
     return line_map
 
@@ -75,14 +80,28 @@ def synlines_main_loader(set='train'):
 
 
 if __name__ == '__main__':
+    # import random
+    # import shutil
+    # tr_dataset = gather_syn_line('train')
+    # random.shuffle(tr_dataset)
+    #
+    # for k in range(21591):
+    #     image_path = tr_dataset[k][0]
+    #     gt_path = image_path[:-4] + '_ocr.txt'
+    #     print(image_path)
+    #     print(gt_path)
+    #     shutil.move(image_path, '/home/loisonv/synth_datasets/synlines/val/')
+    #     shutil.move(gt_path, '/home/loisonv/synth_datasets/synlines/val/')
+
+
     dataset = synlines_main_loader('train')
-    print(dataset[0][0].shape)
-    print(dataset[0][0])
-    print(dataset[31][0])
-    print(dataset[0][1])
-    print(dataset[31][1])
-    print(dataset[61][1])
-    print(dataset[131][1])
+    # print(len(dataset))
+    # print(dataset[0][0])
+    # print(dataset[31][0])
+    # print(dataset[0][1])
+    # print(dataset[31][1])
+    # print(dataset[61][1])
+    # print(dataset[131][1])
 
     # (img_path, transcr) = gather_icfhr2014_line('train')[0]
     # img = img_io.imread(img_path, as_gray=True)

@@ -2,9 +2,6 @@ import os
 import argparse
 import time
 
-# ROOT PATH FOR MODELS SAVING
-ROOT_PATH = '/media/vn_nguyen/hdd/hux/Results/'
-
 # Alphabet for OCR
 # alphabet = [' ', '!', '"', '&', '(', ')', '*', ',', '-', '.', '/', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 #               ':', ';', '=', '?', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q',
@@ -18,11 +15,7 @@ ROOT_PATH = '/media/vn_nguyen/hdd/hux/Results/'
 class BaseOptions():
     def __init__(self):
         self.initialized = False
-        # root_path = ROOT_PATH
-        # root_path = '/media/vn_nguyen/hdd/hux/Results_network/ocr/'
         self.time = time.strftime("%m-%d_%H:%M:%S", time.localtime())
-        # if not os.path.exists(self.log_dir):
-        #   os.mkdir(self.log_dir)
 
     def initialize(self, parser):
         # DATA AND PREPROCESSING PARAMETERS
@@ -61,7 +54,7 @@ class BaseOptions():
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
         parser.add_argument('--batch_size', type=int, default=16)
         parser.add_argument('--epochs', type=int, default=500, help='Training epoch number')
-        parser.add_argument('--milestones', type=list, default=[50], help='Milestones(epochs) to change lr')
+        parser.add_argument('--milestones', type=list, default=[80], help='Milestones(epochs) to change lr')
         # OPTIMIZER PARAMETERS
         parser.add_argument('--optimizer', type=str, default='rmsprop',
                             help="Which optimizer to use. Supported values are 'rmsprop', 'adam', 'adadelta', and 'sgd'.")
@@ -78,7 +71,6 @@ class BaseOptions():
         # Parameters for 'conv' structure
         parser.add_argument('--N_CONV_LAYERS', type=int, default=7)  # 7
         parser.add_argument('--NC', type=int, default=1, help='Number of channels given as an input of CRNN')
-        # Convolutional layers
         parser.add_argument('--N_CONV_OUT', type=list,
                             default=[64, 128, 256, 256, 512, 512, 512])  # [16, 32, 64, 128] #
                             # default=[16, 32, 48, 64, 80]                   )
@@ -102,6 +94,7 @@ class BaseOptions():
         })
         # RECURRENT NETWORK PARAMETERS
         parser.add_argument('--N_REC_LAYERS', type=int, default=1, help='Number of recurrent layers in the network.')
+        parser.add_argument('--N_REC_INPUT', type=int, default=512, help='Number of channels of the input given to the recurrent network. Must be equal to the number of channels outputed by the feature extractor.')
         parser.add_argument('--N_HIDDEN', type=int, default=256, help='Number of hidden layers in the recurrent cells')
         parser.add_argument('--BIDIRECTIONAL', type=bool, default=True, help='Use bidirectional LSTM or not')
         parser.add_argument('--DROPOUT', type=float, default=0.0, help='Dropout parameter within [0,1] in BLSTM')

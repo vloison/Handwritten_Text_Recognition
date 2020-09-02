@@ -40,22 +40,15 @@ class myDataset(Dataset):
         elif data_type == 'synlines':
             self.data = data.synlines_dataset.synlines_main_loader(set)
         else:
-            print("data_type unknowm. Valid values are 'IAM' or 'ICFHR2014' or 'synlines'.")
+            print("data_type unknown. Valid values are 'IAM' or 'ICFHR2014' or 'synlines'.")
 
-        # color data augmentation
-        # brightness = (0.5, 1.5)
-        # brightness = (1, 10)
-        # contrast = (1, 10)
-        # saturation = (0.5, 1.5)
-        # hue = (0.2, 0.4)
         self.transform = transforms.Compose(
             [
                 transforms.ToPILImage(),
-                # transforms.ColorJitter(contrast=contrast)
                 # Other possible data augmentation
                 # transforms.RandomAffine(degrees=(-3, 3), translate=(0, 0.2), scale=(0.9, 1),
                 #                         shear=5, resample=False, fillcolor=255),
-                transforms.RandomAffine(degrees=(-3, 3), translate=(0, 0), scale=(0.9, 1),
+                transforms.RandomAffine(degrees=(-2, 2), translate=(0, 0), scale=(0.9, 1),
                                         shear=5, resample=False, fillcolor=0),
                 # transforms.RandomPerspective(distortion_scale=0.5, p=0.5, interpolation=3, fill=255)
             ]
@@ -176,10 +169,10 @@ if __name__ == '__main__':
     #         img_io.imsave('/home/loisonv/images/train_set_IAM{0}.jpg'.format(k), img)
 
     # Show data augmentation
-    for k in range(10):
-        img = test_set[k][0]
-        img = img.squeeze(0)
-        img_io.imsave('/home/loisonv/images/test_data_aug_tr0_{0}.jpg'.format(k), img)
+    # for k in range(10):
+    #     img = test_set[k][0]
+    #     img = img.squeeze(0)
+    #     img_io.imsave('/home/loisonv/images/test_data_aug_tr0_{0}.jpg'.format(k), img)
 
     # augmentation using data sampler
     batch_size = 8

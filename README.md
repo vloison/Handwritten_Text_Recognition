@@ -2,9 +2,7 @@
 
 [Short presentation of our project](https://docs.google.com/presentation/d/12Z29QPWQubbgZ_PfHG1yqZ3Cal-d6sHWFJcZ0bJVxH8/edit?usp=sharing)
 
-1. [Introduction](#introduction) \
-    1.a The HTR line-level task \
-    1.b The CRNN structure 
+1. [Introduction](#1-introduction) 
     
 2. [Installation](#2-installation) \
     2.a [Install conda environment](#2a-download--and-activate-conda-environment) \
@@ -22,7 +20,7 @@
 5. [Contact](#5-contact)
 
 
-## Introduction 
+## 1. Introduction 
 
 This work was an internship project under Mathieu Aubry's supervision, at the LIGM lab, located in Paris. 
 

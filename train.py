@@ -9,7 +9,6 @@ import data.Preprocessing
 from data.myDataset import myDataset
 from data.myDataset import lmdbDataset
 
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 import torch.optim as optim
 from torch.optim.lr_scheduler import MultiStepLR
@@ -60,6 +59,7 @@ def net_init():
                         batch_norm=params.BATCH_NORM,
                         max_pool=params.MAX_POOL,
                         n_r_layers=params.N_REC_LAYERS,
+                        n_r_input=params.N_REC_INPUT,
                         n_hidden=params.N_HIDDEN,
                         n_out=len(params.alphabet),
                         bidirectional=params.BIDIRECTIONAL,
@@ -219,14 +219,12 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
         avg_cost = 0
         for iter_idx, (img, transcr) in enumerate(tqdm(train_loader)):
             # Process predictions
-            # print("img =", img[0])
             img = Variable(img.data.unsqueeze(1))
             if params.cuda and torch.cuda.is_available():
                 img = img.cuda()
             preds = model(img)
             preds_size = Variable(torch.LongTensor([preds.size(0)] * img.size(0)))
             # Process labels
-            # CTCLoss().cuda() only works with LongTensor
             labels = Variable(torch.LongTensor([params.cdict[c] for c in ''.join(transcr)]))
             label_lengths = torch.LongTensor([len(t) for t in transcr])
             # criterion = CTC loss
@@ -240,11 +238,6 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
             cost.backward()
             optimizer.step()
             lr_scheduler.step()
-            # del preds_size, labels, label_lengths, cost
-            # del img, preds, preds_size, labels, label_lengths, cost
-            # if iter_idx > 0 and iter_idx % 100 == 0:
-            #     print('Epoch[%d/%d] Avg Training Loss: %f'
-            #           % (epoch + 1, params.epochs, avg_cost/(iter_idx*params.batch_size)))
 
 
         avg_cost = avg_cost/len(train_loader)
@@ -259,10 +252,6 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
         else:
             tt = [v for j, v in enumerate(tdec[0]) if j == 0 or v != tdec[0][j - 1]]
 
-        # print("sample img\n", img.shape)
-        # print("sample gt\n", transcr[0])
-        # print("lables\n", labels)
-        # print("lable_len = ", label_lengths)
         if params.save:
             dec_transcr = 'Train epoch ' + str(epoch).zfill(4) + ' Prediction ' + ''.join(
                 [params.icdict[t] for t in tt]).replace('_', '')
@@ -279,11 +268,6 @@ def train(model, criterion, optimizer, lr_scheduler, train_loader, val_loader, l
                 writer.add_scalar('val WER', val_WER, params.previous_epochs + epoch)
 
         losses.append(avg_cost)
-        # print("img = ", img.shape)
-        # print("preds = ", preds)
-        # print("labels = ", labels)
-        # print("preds_size = ", preds_size)
-        # print("label_lengths = ", label_lengths)
 
         print('Epoch[%d/%d] lr = %f \n Avg Training Loss: %f  Avg Validation loss: %f \n Avg CER: %f  Avg WER: %f'
               % (epoch+1, params.epochs, optimizer.param_groups[0]['lr'], avg_cost, val_loss, val_CER, val_WER))

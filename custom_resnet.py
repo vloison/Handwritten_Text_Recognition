@@ -237,6 +237,3 @@ if __name__ == "__main__":
 
     zbis = cResNet(x)
     print('zbis', zbis.shape)
-
-    #f = fullrcnn.featextractor.network._modules['conv0'](x)
-    #print(f.shape)
