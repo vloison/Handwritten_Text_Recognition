@@ -92,9 +92,9 @@ Running this code will use model stored at `model_path` to make predictions on i
 The predictions will be stored in `predictions.txt`  in `data_path` folder.
 
 ``` 
-python lines_predictor.py --data_path datapath  --model_path --imgH image_height_in_pixels
+python lines_predictor.py --data_path datapath  --model_path ./trained_networks/IAM_model_imgH64.pth --imgH 64
 ``` 
-/!\ Make sure that each image in the data folder has a unique file name. 
+/!\ Make sure that each image in the data folder has a unique file name. When you use our trained model with imgH as 64 (i.e. IAM_model_imgH64.pth), you have to set the argument --imgH as 64.
 ### 3.b Train a network from scratch
 
 ``` 
