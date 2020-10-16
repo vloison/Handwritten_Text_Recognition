@@ -51,7 +51,7 @@ def weights_init(m):
 
 
 def net_init():
-    crnn = network.CRNN(imheight=params.imgH,
+    crnn = network.RCNN(imheight=params.imgH,
                         nc=params.NC,
                         n_conv_layers=params.N_CONV_LAYERS,
                         n_conv_out=params.N_CONV_OUT,

@@ -49,7 +49,7 @@ class myDataset(Dataset):
                 # transforms.RandomAffine(degrees=(-3, 3), translate=(0, 0.2), scale=(0.9, 1),
                 #                         shear=5, resample=False, fillcolor=255),
                 transforms.RandomAffine(degrees=(-2, 2), translate=(0, 0), scale=(0.9, 1),
-                                        shear=5, resample=False, fillcolor=0),
+                                        shear=5, resample=False, fillcolor=255),
                 # transforms.RandomPerspective(distortion_scale=0.5, p=0.5, interpolation=3, fill=255)
             ]
             )

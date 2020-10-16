@@ -71,11 +71,11 @@ def img_resize(img, height=None, width=None, keep_ratio=True):
             if scale_h * float(img.shape[1]) <= width:  # padding in width
                 w = int(scale_h * float(img.shape[1]))
                 img = resize(image=img, output_shape=(height, w)).astype(np.float32)
-                img = np.pad(img, ((0, 0), (0, width - w)), 'constant', constant_values=0)
+                img = np.pad(img, ((0, 0), (0, width - w)), 'constant', constant_values=1)
             else:  # padding in height
                 h = int(scale_w * img.shape[0])
                 img = resize(image=img, output_shape=(h, width)).astype(np.float32)
-                img = np.pad(img, ((0, height - h), (0, 0)), 'constant', constant_values=0)
+                img = np.pad(img, ((0, height - h), (0, 0)), 'constant', constant_values=1)
     else:
         img = resize(image=img, output_shape=(height, width)).astype(np.float32)
     return img

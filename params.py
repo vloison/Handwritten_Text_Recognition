@@ -19,25 +19,28 @@ class BaseOptions():
 
     def initialize(self, parser):
         # DATA AND PREPROCESSING PARAMETERS
-        parser.add_argument('--dataset', type=str, default='ICFHR2014',
+        parser.add_argument('--dataset', type=str, default='IAM',
                             help="Which dataset to train and test on. Supported values are 'IAM' and 'ICFHR2014'.")
         parser.add_argument('--tr_data_path', type=str,
                             default='/media/vn_nguyen/00520aaf-5941-4990-ae10-7bc62282b9d5/hux_loisonv/',
                             help="Path to folder containing training datasets")
         parser.add_argument('--data_path', type=str,
-                            default='/home/loisonv/Text_Recognition/images/table/',
+                            default='/home/hux/HTR/',
                             help="Path to folder containing datasets for prediction")
+        parser.add_argument('--model_path', type=str,
+                            default='/home/hux/HTR/trained_networks/IAM_model_imgH64.pth',
+                            help="Path to file of saved trained model")
         parser.add_argument('--imgH', type=int, default=64)
         parser.add_argument('--imgW', type=int, default=800)
         parser.add_argument('--alphabet', type=str,
-                          default="""_%~`@!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """)
+                          default="""_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """)
         # Alphabet for IAM :
         # """_!#&\()*+,-.'"/0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz """
         # Alphabet for ICFHR2014:
         # """_!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
         # Alphabet for synlines:
         # """_%~`@!?#&|\()[]<>*+,-.'"€$£$§=/⊥0123456789:;?ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzéèêâàù """
-        parser.add_argument('--data_aug', type=bool, default=False)
+        parser.add_argument('--data_aug', type=bool, default=True)
         parser.add_argument('--keep_ratio', type=bool, default=True)
         parser.add_argument('--enhance_contrast', type=bool, default=False,
                             help='Enhance contrast of input images or not. Recommended for ICFHR2014')
@@ -45,16 +48,16 @@ class BaseOptions():
         parser.add_argument('--train', type=bool, default=True, help='Train a network or not')
         parser.add_argument('--weights_init', type=bool, default=True)
         parser.add_argument('--pretrained', type=str, default='')
-        parser.add_argument('--save', type=bool, default=True, help='Whether to save the trained network')
-        parser.add_argument('--save_model_path', type=str, default='/media/vn_nguyen/hdd/hux/Results/',
+        parser.add_argument('--save', type=bool, default=False, help='Whether to save the trained network')
+        parser.add_argument('--save_model_path', type=str, default='./',
                             help="Where to save the network after training")
         # PARAMETERS FOR PLOT
         parser.add_argument('--previous_epochs', type=int, default=0)
         # TRAINING PARAMETERS
         parser.add_argument('--cuda', type=bool, default=True, help='Use CUDA or not')
         parser.add_argument('--batch_size', type=int, default=16)
-        parser.add_argument('--epochs', type=int, default=500, help='Training epoch number')
-        parser.add_argument('--milestones', type=list, default=[80], help='Milestones(epochs) to change lr')
+        parser.add_argument('--epochs', type=int, default=400, help='Training epoch number')
+        parser.add_argument('--milestones', type=list, default=[100, 250], help='Milestones(epochs) to change lr')
         # OPTIMIZER PARAMETERS
         parser.add_argument('--optimizer', type=str, default='rmsprop',
                             help="Which optimizer to use. Supported values are 'rmsprop', 'adam', 'adadelta', and 'sgd'.")
@@ -135,11 +138,11 @@ class BaseOptions():
         if not os.path.exists(log_dir):
             os.mkdir(log_dir)
         opt.__setattr__('log_dir', log_dir)
-        print('opt', opt)
+        # print('opt', opt)
         # Update and print
         self.parser = parser
         self.opt = opt
-        if verbose:
-            self.print_options(self.opt)
+        # if verbose:
+        #     self.print_options(self.opt)
 
         return self.opt

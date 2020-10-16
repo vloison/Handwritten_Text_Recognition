@@ -104,11 +104,11 @@ class RNN(nn.Module):
         return output
 
 
-class CRNN(nn.Module):
-    """ CRNN for HTR """
+class RCNN(nn.Module):
+    """ RCNN for HTR """
     def __init__(self, imheight, feat_extractor, nc, n_conv_layers, n_conv_out, conv, batch_norm,
                  max_pool, n_r_layers, n_r_input, n_hidden, n_out, bidirectional=True, dropout=0.0):
-        super(CRNN, self).__init__()
+        super(RCNN, self).__init__()
         self.featextractor = FeatureExtractor(imheight, nc, n_conv_layers, n_conv_out, conv, batch_norm, max_pool,
                                               feat_extractor)
         self.recnet = RNN(n_r_layers, n_r_input, n_hidden, n_out, bidirectional, dropout)
