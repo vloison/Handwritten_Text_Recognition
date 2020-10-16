@@ -94,7 +94,7 @@ The predictions will be stored in `predictions.txt`  in `data_path` folder.
 ``` 
 python lines_predictor.py --data_path datapath  --model_path ./trained_networks/IAM_model_imgH64.pth --imgH 64
 ``` 
-/!\ Make sure that each image in the data folder has a unique file name. When you use our trained model with imgH as 64 (i.e. IAM_model_imgH64.pth), you have to set the argument --imgH as 64.
+/!\ Make sure that each image in the data folder has a unique file name and all images are in .jpg form. When you use our trained model with imgH as 64 (i.e. IAM_model_imgH64.pth), you have to set the argument --imgH as 64.
 ### 3.b Train a network from scratch
 
 ``` 
